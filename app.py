@@ -8,11 +8,12 @@ import os
 
 from PIL import Image
 from tensorflow.keras.applications.resnet50 import preprocess_input
+from groq import Groq
+
 
 # --------------------------------------------------
 # GROQ GENAI CONFIGURATION
 # --------------------------------------------------
-from groq import Groq
 
 GROQ_MODEL = "openai/gpt-oss-120b"
 
@@ -22,8 +23,17 @@ ADVISORY_DISCLAIMER = (
     "Please consult a qualified healthcare professional."
 )
 
+
 def get_groq_client():
+
     key = os.environ.get("GROQ_API_KEY")
+
+    # Read from Streamlit Cloud Secrets if not in environment
+    if not key:
+        try:
+            key = st.secrets["GROQ_API_KEY"]
+        except Exception:
+            key = None
 
     if not key:
         return None
@@ -35,12 +45,14 @@ def get_groq_client():
 # CLINICAL AI ADVISORY
 # --------------------------------------------------
 
-def generate_clinical_advisory(subtype, confidence, patient_features, shap_features):
+def generate_clinical_advisory(
+    subtype, confidence, patient_features, shap_features
+):
 
     client = get_groq_client()
 
     if client is None:
-        return "Groq API key not found. Please check Colab Secrets."
+        return "Groq API key not found. Please check Streamlit Cloud Secrets."
 
     prompt = f"""
     You are an educational PCOS health information assistant.
@@ -85,13 +97,14 @@ def generate_clinical_advisory(subtype, confidence, patient_features, shap_featu
 # ULTRASOUND AI ADVISORY
 # --------------------------------------------------
 
-def generate_ultrasound_advisory(prediction, pcos_probability,
-                                 comparison_probability):
+def generate_ultrasound_advisory(
+    prediction, pcos_probability, comparison_probability
+):
 
     client = get_groq_client()
 
     if client is None:
-        return "Groq API key not found. Please check Colab Secrets."
+        return "Groq API key not found. Please check Streamlit Cloud Secrets."
 
     prompt = f"""
     You are an educational PCOS health information assistant.
@@ -136,6 +149,10 @@ st.set_page_config(
 )
 
 
+# --------------------------------------------------
+# CUSTOM CSS
+# --------------------------------------------------
+
 st.markdown("""
 <style>
 
@@ -163,24 +180,8 @@ p, label {
     padding: 15px;
 }
 
-.stButton > button {
-    background-color: #8064A8;
-    color: white;
-    border: none;
-    border-radius: 10px;
-}
-
-.stButton > button:hover {
-    background-color: #674B91;
-    color: white;
-}
-
-[data-testid="stAlert"] {
-    border-radius: 12px;
-}
-
-
 /* Lavender action buttons */
+
 .stButton > button,
 .stFormSubmitButton > button {
     background-color: #8064A8 !important;
@@ -197,8 +198,6 @@ p, label {
     border: 1px solid #674B91 !important;
 }
 
-
-
 /* Keep PCOS Insight in its lavender light theme */
 
 [data-testid="stAppViewContainer"] {
@@ -213,21 +212,15 @@ label {
 }
 
 /* Hide Streamlit toolbar and theme selector */
+
 [data-testid="stToolbar"],
 [data-testid="stDecoration"],
 header[data-testid="stHeader"] {
     display: none !important;
 }
 
-/* Preserve white text on purple buttons */
-.stButton > button,
-.stFormSubmitButton > button {
-    background-color: #8064A8 !important;
-    color: #000000 !important;
-}
-
-
 /* Make normal app text readable */
+
 [data-testid="stMarkdownContainer"],
 [data-testid="stMarkdownContainer"] p,
 [data-testid="stMarkdownContainer"] li {
@@ -235,6 +228,7 @@ header[data-testid="stHeader"] {
 }
 
 /* Clinical prediction - red */
+
 .prediction-red {
     color: #D32F2F !important;
     font-size: 23px;
@@ -242,6 +236,7 @@ header[data-testid="stHeader"] {
 }
 
 /* Ultrasound prediction - red or green */
+
 .prediction-green {
     color: #218838 !important;
     font-size: 23px;
@@ -249,13 +244,14 @@ header[data-testid="stHeader"] {
 }
 
 /* Advisory content */
+
 .advisory-text {
     color: #493B5D !important;
     font-size: 16px;
 }
 
-
 /* GenAI advisory readable text */
+
 .stMarkdown p,
 .stMarkdown li,
 .stMarkdown strong,
@@ -274,9 +270,16 @@ header[data-testid="stHeader"] {
 # MODEL AND DATA PATHS
 # --------------------------------------------------
 
-CLINICAL_MODEL_PATH = "models/xgboost_model.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# XGBoost model is in the same folder as app.py
+CLINICAL_MODEL_PATH = os.path.join(
+    BASE_DIR, "xgboost_model.json"
+)
+
+# CNN model is downloaded from Hugging Face
 ULTRASOUND_MODEL_PATH = "/tmp/cnn_model.keras"
+
 
 FEATURES = [
     "Hair_Growth", "Blood_Sugar", "Hormonal_Disruption", "AMH",
@@ -293,19 +296,24 @@ CLASSES = [
     "Post-Pill"
 ]
 
+
 # --------------------------------------------------
 # LOAD MODELS
 # --------------------------------------------------
 
 @st.cache_resource
 def load_clinical_model():
+
     model = xgb.Booster()
+
     model.load_model(CLINICAL_MODEL_PATH)
+
     return model
 
 
 @st.cache_resource
 def load_ultrasound_model():
+
     from huggingface_hub import hf_hub_download
 
     model_path = hf_hub_download(
@@ -317,8 +325,6 @@ def load_ultrasound_model():
 
 
 # --------------------------------------------------
-
-# --------------------------------------------------
 # PAGE NAVIGATION — NO SIDEBAR
 # --------------------------------------------------
 
@@ -327,10 +333,10 @@ if "page" not in st.session_state:
 
 page = st.session_state.page
 
+
+# ==================================================
 # HOME PAGE
 # ==================================================
-
-
 
 if page == "Home":
 
@@ -354,6 +360,7 @@ if page == "Home":
     """, unsafe_allow_html=True)
 
     st.markdown("### Welcome to your health insight space 💜")
+
     st.write(
         "Choose an analysis to explore your health-related "
         "clinical features or ultrasound image patterns."
@@ -362,6 +369,7 @@ if page == "Home":
     col1, col2 = st.columns(2)
 
     with col1:
+
         st.markdown("""
         <div style="background:#F0E9FA;padding:22px;
         border-radius:16px;min-height:145px;">
@@ -373,11 +381,16 @@ if page == "Home":
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("Explore Clinical Analysis", use_container_width=True):
+        if st.button(
+            "Explore Clinical Analysis",
+            use_container_width=True
+        ):
+
             st.session_state.page = "Clinical Analysis"
             st.rerun()
 
     with col2:
+
         st.markdown("""
         <div style="background:#F7EDF8;padding:22px;
         border-radius:16px;min-height:145px;">
@@ -389,7 +402,11 @@ if page == "Home":
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("Explore Ultrasound Analysis", use_container_width=True):
+        if st.button(
+            "Explore Ultrasound Analysis",
+            use_container_width=True
+        ):
+
             st.session_state.page = "Ultrasound Analysis"
             st.rerun()
 
@@ -411,12 +428,16 @@ if page == "Home":
     )
 
 
+# ==================================================
+# CLINICAL ANALYSIS
+# ==================================================
+
 elif page == "Clinical Analysis":
 
     if st.button("← Back to Home"):
+
         st.session_state.page = "Home"
         st.rerun()
-
 
     st.title("Clinical Analysis")
 
@@ -428,35 +449,95 @@ elif page == "Clinical Analysis":
 
         with col1:
 
-            hair = st.selectbox("Hair Growth", ["No", "Yes"])
-            blood_sugar = st.number_input("Blood Sugar", min_value=0.0, value=100.0)
-            hormonal = st.number_input("Hormonal Disruption", min_value=0.0, value=1.0)
-            amh = st.number_input("AMH", min_value=0.0, value=3.0)
-            androgen = st.number_input("Androgen Score", min_value=0.0, value=1.0)
-            homa = st.number_input("HOMA_IR", min_value=0.0, value=1.0)
-            fsh_lh_raw = st.number_input("FSH_LH_raw", min_value=0.0, value=1.0)
-            total_follicles = st.number_input("Total Follicles", min_value=0.0, value=20.0)
-            follicle_l = st.number_input("Follicle_L", min_value=0.0, value=10.0)
-            lh = st.number_input("LH", min_value=0.0, value=8.0)
+            hair = st.selectbox(
+                "Hair Growth", ["No", "Yes"]
+            )
+
+            blood_sugar = st.number_input(
+                "Blood Sugar", min_value=0.0, value=100.0
+            )
+
+            hormonal = st.number_input(
+                "Hormonal Disruption", min_value=0.0, value=1.0
+            )
+
+            amh = st.number_input(
+                "AMH", min_value=0.0, value=3.0
+            )
+
+            androgen = st.number_input(
+                "Androgen Score", min_value=0.0, value=1.0
+            )
+
+            homa = st.number_input(
+                "HOMA_IR", min_value=0.0, value=1.0
+            )
+
+            fsh_lh_raw = st.number_input(
+                "FSH_LH_raw", min_value=0.0, value=1.0
+            )
+
+            total_follicles = st.number_input(
+                "Total Follicles", min_value=0.0, value=20.0
+            )
+
+            follicle_l = st.number_input(
+                "Follicle_L", min_value=0.0, value=10.0
+            )
+
+            lh = st.number_input(
+                "LH", min_value=0.0, value=8.0
+            )
 
         with col2:
 
-            fsh = st.number_input("FSH", min_value=0.0, value=5.0)
-            lh_fsh_ratio = st.number_input("LH_FSH_Ratio", min_value=0.0, value=1.6)
-            cycle_length = st.number_input("Cycle Length", min_value=0.0, value=35.0)
-            fast_food = st.selectbox("Fast Food Consumption", ["No", "Yes"])
-            tsh = st.number_input("TSH", min_value=0.0, value=2.5)
-            bp = st.number_input("BP Diastolic", min_value=0.0, value=80.0)
-            bmi = st.number_input("BMI", min_value=0.0, value=25.0)
-            progesterone = st.number_input("Progesterone", min_value=0.0, value=1.0)
-            marriage_years = st.number_input("Marriage Years", min_value=0.0, value=0.0)
-            rr = st.number_input("RR", min_value=0.0, value=18.0)
+            fsh = st.number_input(
+                "FSH", min_value=0.0, value=5.0
+            )
+
+            lh_fsh_ratio = st.number_input(
+                "LH_FSH_Ratio", min_value=0.0, value=1.6
+            )
+
+            cycle_length = st.number_input(
+                "Cycle Length", min_value=0.0, value=35.0
+            )
+
+            fast_food = st.selectbox(
+                "Fast Food Consumption", ["No", "Yes"]
+            )
+
+            tsh = st.number_input(
+                "TSH", min_value=0.0, value=2.5
+            )
+
+            bp = st.number_input(
+                "BP Diastolic", min_value=0.0, value=80.0
+            )
+
+            bmi = st.number_input(
+                "BMI", min_value=0.0, value=25.0
+            )
+
+            progesterone = st.number_input(
+                "Progesterone", min_value=0.0, value=1.0
+            )
+
+            marriage_years = st.number_input(
+                "Marriage Years", min_value=0.0, value=0.0
+            )
+
+            rr = st.number_input(
+                "RR", min_value=0.0, value=18.0
+            )
 
         submitted = st.form_submit_button("Predict Subtype")
+
 
     if submitted:
 
         values = {
+
             "Hair_Growth": 1 if hair == "Yes" else 0,
             "Blood_Sugar": blood_sugar,
             "Hormonal_Disruption": hormonal,
@@ -481,24 +562,36 @@ elif page == "Clinical Analysis":
 
         try:
 
+            # Load XGBoost model
             model = load_clinical_model()
 
-            input_df = pd.DataFrame([values], columns=FEATURES)
+            input_df = pd.DataFrame(
+                [values], columns=FEATURES
+            )
 
-            probabilities = model.predict(xgb.DMatrix(input_df))
+            probabilities = model.predict(
+                xgb.DMatrix(input_df)
+            )
 
             if probabilities.ndim == 1:
                 probabilities = probabilities.reshape(1, -1)
 
             probabilities = probabilities[0]
 
-            predicted_index = int(np.argmax(probabilities))
-
+            predicted_index = int(
+                np.argmax(probabilities)
+            )
 
 
             # 1. Display predicted subtype first
+
             st.markdown(
-                f"<div style='color:#D32F2F !important; font-size:23px; font-weight:700;'>Predicted PCOS Subtype: {CLASSES[predicted_index]}</div>",
+                f"""
+                <div style='color:#D32F2F !important;
+                font-size:23px;font-weight:700;'>
+                Predicted PCOS Subtype: {CLASSES[predicted_index]}
+                </div>
+                """,
                 unsafe_allow_html=True
             )
 
@@ -507,10 +600,14 @@ elif page == "Clinical Analysis":
                 f"{probabilities[predicted_index] * 100:.2f}%"
             )
 
+
             # 2. Probability distribution
+
             probability_df = pd.DataFrame({
+
                 "Subtype": CLASSES,
                 "Probability": probabilities
+
             })
 
             probability_df["Probability (%)"] = (
@@ -529,77 +626,112 @@ elif page == "Clinical Analysis":
                 hide_index=True
             )
 
+
             # 3. Patient-specific SHAP explanation
+
             import shap
 
             explainer = shap.TreeExplainer(model)
-            shap_values = np.asarray(explainer.shap_values(input_df))
+
+            shap_values = np.asarray(
+                explainer.shap_values(input_df)
+            )
 
             patient_shap = shap_values[0, :, predicted_index]
 
             shap_df = pd.DataFrame({
+
                 "Feature": FEATURES,
                 "SHAP Value": patient_shap
+
             })
 
-            shap_df["Absolute SHAP"] = np.abs(shap_df["SHAP Value"])
+            shap_df["Absolute SHAP"] = np.abs(
+                shap_df["SHAP Value"]
+            )
+
             shap_df = shap_df.sort_values(
-                "Absolute SHAP", ascending=False
+                "Absolute SHAP",
+                ascending=False
             ).head(5)
 
             st.subheader("Patient-Specific SHAP Explanation")
+
             st.caption(
                 "Top five features contributing to this model prediction. "
                 "SHAP values represent model contributions, not medical causes."
             )
 
-            st.bar_chart(shap_df.set_index("Feature")["SHAP Value"])
+            st.bar_chart(
+                shap_df.set_index("Feature")["SHAP Value"]
+            )
 
             st.dataframe(
                 shap_df[["Feature", "SHAP Value"]],
                 hide_index=True
             )
 
+
             # 4. Automatically generate clinical advisory
+
             st.divider()
+
             st.subheader("Clinical AI Advisory")
 
             with st.spinner("Generating your clinical advisory..."):
+
                 try:
+
                     advisory = generate_clinical_advisory(
+
                         subtype=CLASSES[predicted_index],
-                        confidence=float(probabilities[predicted_index]),
+
+                        confidence=float(
+                            probabilities[predicted_index]
+                        ),
+
                         patient_features=values,
+
                         shap_features=shap_df[
                             ["Feature", "SHAP Value"]
                         ].to_dict(orient="records")
+
                     )
 
                     st.markdown(advisory)
+
                     st.info(ADVISORY_DISCLAIMER)
 
                 except Exception as e:
-                    st.error(f"Clinical advisory error: {e}")
+
+                    st.error(
+                        f"Clinical advisory error: {e}"
+                    )
+
 
         except Exception as e:
 
-            st.error(f"Clinical prediction error: {e}")
+            st.error(
+                f"Clinical prediction error: {e}"
+            )
 
 
 # ==================================================
-# SHAP EXPLAINABILITY
+# ULTRASOUND ANALYSIS
 # ==================================================
 
 elif page == "Ultrasound Analysis":
 
     if st.button("← Back to Home"):
+
         st.session_state.page = "Home"
         st.rerun()
 
-
     st.title("Ultrasound Analysis")
 
-    st.write("Upload an ultrasound image for model-based classification.")
+    st.write(
+        "Upload an ultrasound image for model-based classification."
+    )
 
     uploaded_file = st.file_uploader(
         "Upload ultrasound image",
@@ -636,34 +768,57 @@ elif page == "Ultrasound Analysis":
                     image_array, axis=0
                 )
 
-                image_array = preprocess_input(image_array)
+                image_array = preprocess_input(
+                    image_array
+                )
 
                 output = float(
-                    model.predict(image_array, verbose=0)[0][0]
+                    model.predict(
+                        image_array, verbose=0
+                    )[0][0]
                 )
 
                 # CNN output represents P(PCO)
+
                 pcos_probability = output
+
                 comparison_probability = 1.0 - output
 
                 if pcos_probability >= comparison_probability:
+
                     prediction = "PCO"
+
                 else:
+
                     prediction = "Comparison Class"
 
-                prediction_color = "#D32F2F" if prediction == "PCO" else "#218838"
+
+                prediction_color = (
+                    "#D32F2F"
+                    if prediction == "PCO"
+                    else "#218838"
+                )
 
                 st.markdown(
-                    f"<div style='color:{prediction_color} !important; font-size:23px; font-weight:700;'>Predicted class: {prediction}</div>",
+                    f"""
+                    <div style='color:{prediction_color} !important;
+                    font-size:23px;font-weight:700;'>
+                    Predicted class: {prediction}
+                    </div>
+                    """,
                     unsafe_allow_html=True
                 )
 
+
                 probability_df = pd.DataFrame({
+
                     "Class": ["PCO", "Comparison Class"],
+
                     "Probability (%)": [
                         round(pcos_probability * 100, 2),
                         round(comparison_probability * 100, 2)
                     ]
+
                 })
 
                 st.subheader("Prediction Probabilities")
@@ -677,26 +832,45 @@ elif page == "Ultrasound Analysis":
                     use_container_width=True
                 )
 
+
+                # Automatically generate ultrasound advisory
+
                 st.divider()
+
                 st.subheader("Ultrasound AI Advisory")
 
-                with st.spinner("Generating ultrasound advisory..."):
+                with st.spinner(
+                    "Generating ultrasound advisory..."
+                ):
+
                     try:
+
                         advisory = generate_ultrasound_advisory(
+
                             prediction=prediction,
+
                             pcos_probability=pcos_probability,
+
                             comparison_probability=comparison_probability
+
                         )
 
                         st.markdown(advisory)
+
                         st.info(ADVISORY_DISCLAIMER)
 
                     except Exception as e:
-                        st.error(f"Ultrasound advisory error: {e}")
+
+                        st.error(
+                            f"Ultrasound advisory error: {e}"
+                        )
+
 
             except Exception as e:
 
-                st.error(f"Ultrasound prediction error: {e}")
+                st.error(
+                    f"Ultrasound prediction error: {e}"
+                )
 
 
 # --------------------------------------------------
