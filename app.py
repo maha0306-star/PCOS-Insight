@@ -242,26 +242,30 @@ header[data-testid="stHeader"] {
     font-weight: 700;
 }
 
-/* Top navigation styling */
-
-div[role="radiogroup"] {
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.78);
-    padding: 10px 14px;
-    border: 1px solid #E5D9F3;
-    border-radius: 14px;
+/* Top navigation styling — scoped to the main navigation only */
+.st-key-main_navigation [role="radiogroup"] {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 5px !important;
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 !important;
 }
-
-div[role="radiogroup"] label {
-    background: #F3EDFA;
-    border: 1px solid #E5D9F3;
-    border-radius: 9px;
-    padding: 7px 13px;
+.st-key-main_navigation [role="radiogroup"] label {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 7px !important;
+    padding: 8px 10px !important;
+    color: #3F3151 !important;
+    font-size: 13px;
+    font-weight: 650;
 }
-
-.nav-divider {
-    border-bottom: 1px solid #E5D9F3;
-    margin: 4px 0 22px 0;
+.st-key-main_navigation [role="radiogroup"] label:has(input:checked) {
+    background: #8060B2 !important;
+}
+.st-key-main_navigation [role="radiogroup"] label:has(input:checked) p {
+    color: white !important;
 }
 
 /* Advisory content */
@@ -375,31 +379,6 @@ div[role="radiogroup"] label {
     font-size:12px;
     margin-top:14px;
 }
-div[role="radiogroup"] {
-    background:transparent !important;
-    border:0 !important;
-    padding:0 !important;
-    justify-content:flex-end;
-    gap:3px !important;
-}
-div[role="radiogroup"] label {
-    background:transparent !important;
-    border:0 !important;
-    border-radius:0 !important;
-    padding:9px 10px !important;
-    color:#3F3151 !important;
-    font-size:13px;
-    font-weight:650;
-}
-div[role="radiogroup"] label:has(input:checked) {
-    background:#8060B2 !important;
-    border-radius:7px !important;
-}
-div[role="radiogroup"] label:has(input:checked) p {
-    color:white !important;
-}
-
-
 @media (max-width: 900px) {
   .brand-name { font-size:21px; }
   .st-key-home_hero { padding: 14px 14px 0 14px; }
@@ -483,9 +462,24 @@ NAV_PAGES = [
     "Contact Us"
 ]
 
+# Keep the navigation widget and the active page in sync. This prevents
+# the radio tab from reverting to an old selection after a card/back click.
+if "main_navigation" not in st.session_state:
+    st.session_state.main_navigation = st.session_state.page
+
+
+def set_page(page_name):
+    st.session_state.page = page_name
+    st.session_state.main_navigation = page_name
+
+
+def sync_page_from_navigation():
+    st.session_state.page = st.session_state.main_navigation
+
+
 def render_navigation():
     header_left, header_right = st.columns(
-        [1.15, 2.4], vertical_alignment="center"
+        [1.0, 2.8], vertical_alignment="center"
     )
 
     with header_left:
@@ -505,21 +499,16 @@ def render_navigation():
             """, unsafe_allow_html=True)
 
     with header_right:
-        current_index = (
-            NAV_PAGES.index(st.session_state.page)
-            if st.session_state.page in NAV_PAGES
-            else 0
-        )
-        selected = st.radio(
+        st.radio(
             "Main navigation",
             NAV_PAGES,
-            index=current_index,
+            key="main_navigation",
             horizontal=True,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            on_change=sync_page_from_navigation
         )
 
-    st.session_state.page = selected
-    return selected
+    return st.session_state.page
 
 
 # ==================================================
@@ -581,9 +570,13 @@ if st.session_state.page == "Home":
               and SHAP-based model explanations.</p>
             </div>
             """, unsafe_allow_html=True)
-            if st.button("Open Clinical Analysis", key="home_clinical", use_container_width=True):
-                st.session_state.page = "Clinical Analysis"
-                st.rerun()
+            st.button(
+                "Open Clinical Analysis",
+                key="home_clinical",
+                use_container_width=True,
+                on_click=set_page,
+                args=("Clinical Analysis",)
+            )
 
         with ultrasound_card:
             st.markdown("""
@@ -594,9 +587,13 @@ if st.session_state.page == "Home":
               PCO or Comparison Class prediction.</p>
             </div>
             """, unsafe_allow_html=True)
-            if st.button("Open Ultrasound Analysis", key="home_ultrasound", use_container_width=True):
-                st.session_state.page = "Ultrasound Analysis"
-                st.rerun()
+            st.button(
+                "Open Ultrasound Analysis",
+                key="home_ultrasound",
+                use_container_width=True,
+                on_click=set_page,
+                args=("Ultrasound Analysis",)
+            )
 
         st.markdown("<div style='height:22px'></div>", unsafe_allow_html=True)
         st.markdown("## Research at a glance")
@@ -726,9 +723,7 @@ elif page == "Contact Us":
 
 elif page == "Clinical Analysis":
 
-    if st.button("← Back to Home"):
-        st.session_state.page = "Home"
-        st.rerun()
+    st.button("← Back to Home", on_click=set_page, args=("Home",))
 
     st.title("Clinical Analysis")
     st.write("Enter the clinical measurements below.")
@@ -916,9 +911,7 @@ elif page == "Clinical Analysis":
 
 elif page == "Ultrasound Analysis":
 
-    if st.button("← Back to Home"):
-        st.session_state.page = "Home"
-        st.rerun()
+    st.button("← Back to Home", on_click=set_page, args=("Home",))
 
     st.title("Ultrasound Analysis")
     st.write("Upload an ultrasound image for model-based classification.")
