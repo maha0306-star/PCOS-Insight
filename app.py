@@ -316,6 +316,32 @@ div[role="radiogroup"] label {
     text-transform:uppercase;
     margin-top:4px;
 }
+.st-key-home_hero {
+    background: linear-gradient(112deg, #B69ADD 0%, #C6B0E5 58%, #D4C4EB 100%);
+    padding: 20px 30px 0 30px;
+    margin-top: 2px;
+    overflow: hidden;
+}
+.st-key-home_hero [data-testid="stHorizontalBlock"] {
+    align-items: center;
+}
+.st-key-home_hero .brand-name {
+    color: #302640 !important;
+}
+.st-key-home_hero .brand-subtitle {
+    color: #5B4771 !important;
+}
+.st-key-home_hero div[role="radiogroup"] label {
+    color: #302640 !important;
+}
+.st-key-home_hero .hero-panel {
+    background: transparent !important;
+    padding: 34px 20px 32px 10px;
+    min-height: 390px;
+}
+.st-key-home_hero [data-testid="stImage"] img {
+    border-radius: 0 !important;
+}
 .hero-panel {
     background:linear-gradient(112deg,#B69ADD 0%,#C6B0E5 58%,#D4C4EB 100%);
     border-radius:0;
@@ -376,7 +402,8 @@ div[role="radiogroup"] label:has(input:checked) p {
 
 @media (max-width: 900px) {
   .brand-name { font-size:21px; }
-  .hero-panel { min-height:unset; padding:26px 22px; border-radius:16px; }
+  .st-key-home_hero { padding: 14px 14px 0 14px; }
+  .st-key-home_hero .hero-panel { min-height:unset; padding:22px 10px; }
 }
 
 </style>
@@ -456,187 +483,140 @@ NAV_PAGES = [
     "Contact Us"
 ]
 
-header_left, header_right = st.columns([1.15, 2.4], vertical_alignment="center")
-
-with header_left:
-    logo_col, brand_text_col = st.columns(
-        [1, 3.8],
-        vertical_alignment="center"
+def render_navigation():
+    header_left, header_right = st.columns(
+        [1.15, 2.4], vertical_alignment="center"
     )
 
-    with logo_col:
-        logo_path = os.path.join(BASE_DIR, "pcos_insight_logo.png")
-        if os.path.exists(logo_path):
-            st.image(logo_path, width=48)
+    with header_left:
+        logo_col, brand_text_col = st.columns(
+            [1, 3.8], vertical_alignment="center"
+        )
 
-    with brand_text_col:
-        st.markdown("""
-        <div class="brand-name">PCOS Insight</div>
-        <div class="brand-subtitle">Women's health research</div>
-        """, unsafe_allow_html=True)
+        with logo_col:
+            logo_path = os.path.join(BASE_DIR, "pcos_insight_logo.png")
+            if os.path.exists(logo_path):
+                st.image(logo_path, width=48)
 
-with header_right:
-    current_index = (
-        NAV_PAGES.index(st.session_state.page)
-        if st.session_state.page in NAV_PAGES
-        else 0
-    )
-    selected_page = st.radio(
-        "Main navigation",
-        NAV_PAGES,
-        index=current_index,
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-
-st.session_state.page = selected_page
-page = st.session_state.page
-st.markdown("<div class='nav-divider'></div>", unsafe_allow_html=True)
-
-
-# ==================================================
-# HOME PAGE
-# ==================================================
-
-if page == "Home":
-
-    hero_text, hero_image = st.columns([1.05, 1.0], gap="large")
-
-    with hero_text:
-        st.markdown("""
-        <div class="hero-panel">
-          <div class="hero-kicker">AI-powered PCOS research</div>
-          <div class="hero-title">
-            A smarter perspective<br>
-            on women's health
-          </div>
-          <div class="hero-copy">
-            Explore PCOS-related clinical biomarkers and ultrasound
-            image patterns through machine learning, deep learning,
-            and explainable AI.
-          </div>
-          <div class="hero-note">
-            Research-focused insights • Multimodal analysis • Explainable results
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with hero_image:
-        hero_path = os.path.join(BASE_DIR, "hero_women.png")
-        if os.path.exists(hero_path):
-            st.image(hero_path, use_container_width=True)
-        else:
+        with brand_text_col:
             st.markdown("""
-            <div style="
-              min-height:390px; height:100%;
-              border-radius:0 18px 18px 0;
-              background:linear-gradient(135deg,#D8C8EB,#B99ADD);
-              display:flex;align-items:center;justify-content:center;
-              color:#604582;text-align:center;padding:25px;">
-              <div>
-                <div style="font-size:54px;">♡</div>
-                <b>Women's health, supported by research</b>
-                <p style="font-size:13px;">
-                  Add hero_women.png beside app.py to display the hero photograph.
-                </p>
-              </div>
+            <div class="brand-name">PCOS Insight</div>
+            <div class="brand-subtitle">Women's health research</div>
+            """, unsafe_allow_html=True)
+
+    with header_right:
+        current_index = (
+            NAV_PAGES.index(st.session_state.page)
+            if st.session_state.page in NAV_PAGES
+            else 0
+        )
+        selected = st.radio(
+            "Main navigation",
+            NAV_PAGES,
+            index=current_index,
+            horizontal=True,
+            label_visibility="collapsed"
+        )
+
+    st.session_state.page = selected
+    return selected
+
+
+# ==================================================
+# HOME PAGE — HEADER AND HERO IN ONE SECTION
+# ==================================================
+
+if st.session_state.page == "Home":
+
+    with st.container(key="home_hero"):
+        page = render_navigation()
+
+        if page == "Home":
+            hero_text, hero_image = st.columns(
+                [1.0, 1.05], gap="small", vertical_alignment="center"
+            )
+
+            with hero_text:
+                st.markdown("""
+                <div class="hero-panel">
+                  <div class="hero-kicker">AI-powered PCOS research</div>
+                  <div class="hero-title">
+                    A smarter perspective<br>
+                    on women's health
+                  </div>
+                  <div class="hero-copy">
+                    Explore PCOS-related clinical biomarkers and ultrasound
+                    image patterns through machine learning, deep learning,
+                    and explainable AI.
+                  </div>
+                  <div class="hero-note">
+                    Research-focused insights • Multimodal analysis • Explainable results
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            with hero_image:
+                hero_path = os.path.join(BASE_DIR, "hero_women.png")
+                if os.path.exists(hero_path):
+                    st.image(hero_path, use_container_width=True)
+                else:
+                    st.warning(
+                        "Add hero_women.png beside app.py to display the hero photograph."
+                    )
+
+    page = st.session_state.page
+
+    if page == "Home":
+        st.markdown("<div style='height:22px'></div>", unsafe_allow_html=True)
+        st.markdown("## Research at a glance")
+
+        stat1, stat2, stat3 = st.columns(3)
+        with stat1:
+            st.markdown("""
+            <div style="background:#F0E8FA;padding:22px 18px;border-radius:16px;
+            text-align:center;min-height:125px;">
+              <div style="font-size:34px;font-weight:800;color:#7656A3;">4</div>
+              <div style="font-weight:700;color:#443451;">Clinical subtypes</div>
+              <div style="font-size:12px;color:#766783;">XGBoost classification</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with stat2:
+            st.markdown("""
+            <div style="background:#F0E8FA;padding:22px 18px;border-radius:16px;
+            text-align:center;min-height:125px;">
+              <div style="font-size:34px;font-weight:800;color:#7656A3;">2</div>
+              <div style="font-weight:700;color:#443451;">Ultrasound classes</div>
+              <div style="font-size:12px;color:#766783;">CNN image classification</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with stat3:
+            st.markdown("""
+            <div style="background:#F0E8FA;padding:22px 18px;border-radius:16px;
+            text-align:center;min-height:125px;">
+              <div style="font-size:34px;font-weight:800;color:#7656A3;">XAI</div>
+              <div style="font-weight:700;color:#443451;">Explainable insights</div>
+              <div style="font-size:12px;color:#766783;">SHAP-based interpretation</div>
             </div>
             """, unsafe_allow_html=True)
 
-    st.markdown("<div style='height:22px'></div>", unsafe_allow_html=True)
-    st.markdown("## Research at a glance")
+        st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
+        st.markdown("## About PCOS Insight")
+        st.write(
+            "PCOS Insight is a research-focused platform that explores "
+            "clinical biomarkers and ultrasound image patterns using "
+            "machine learning, deep learning and explainable AI."
+        )
+        st.info(
+            "For educational and research purposes only. It is not a "
+            "medical diagnostic tool."
+        )
 
-    stat1, stat2, stat3 = st.columns(3)
-    with stat1:
-        st.markdown("""
-        <div style="background:#F0E8FA;padding:22px 18px;border-radius:16px;
-        text-align:center;min-height:125px;">
-          <div style="font-size:34px;font-weight:800;color:#7656A3;">4</div>
-          <div style="font-weight:700;color:#443451;">Clinical subtypes</div>
-          <div style="font-size:12px;color:#766783;">XGBoost classification</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with stat2:
-        st.markdown("""
-        <div style="background:#F0E8FA;padding:22px 18px;border-radius:16px;
-        text-align:center;min-height:125px;">
-          <div style="font-size:34px;font-weight:800;color:#7656A3;">2</div>
-          <div style="font-weight:700;color:#443451;">Ultrasound classes</div>
-          <div style="font-size:12px;color:#766783;">CNN image classification</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with stat3:
-        st.markdown("""
-        <div style="background:#F0E8FA;padding:22px 18px;border-radius:16px;
-        text-align:center;min-height:125px;">
-          <div style="font-size:34px;font-weight:800;color:#7656A3;">AI</div>
-          <div style="font-weight:700;color:#443451;">Explainable insights</div>
-          <div style="font-size:12px;color:#766783;">SHAP + educational advisories</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height:18px'></div>", unsafe_allow_html=True)
-    st.markdown("## Explore the analysis modules")
-    st.write(
-        "Choose a research module to explore clinical biomarker patterns "
-        "or ultrasound image classification."
-    )
-
-    col1, col2 = st.columns(2, gap="large")
-
-    with col1:
-        st.markdown("""
-        <div style="background:#FFFFFF;padding:23px;border-radius:16px;
-        border:1px solid #E5D9F3;min-height:160px;">
-          <h3 style="color:#604582;">Clinical Analysis</h3>
-          <p style="color:#594B6D;">
-            Explore clinical measurements, four-class subtype predictions,
-            probability scores, and patient-specific SHAP explanations.
-          </p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Explore Clinical Analysis", use_container_width=True):
-            st.session_state.page = "Clinical Analysis"
-            st.rerun()
-
-    with col2:
-        st.markdown("""
-        <div style="background:#FFFFFF;padding:23px;border-radius:16px;
-        border:1px solid #E5D9F3;min-height:160px;">
-          <h3 style="color:#604582;">Ultrasound Analysis</h3>
-          <p style="color:#594B6D;">
-            Explore CNN-based ultrasound image classification into
-            PCO and Comparison Class, with probability analysis.
-          </p>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Explore Ultrasound Analysis", use_container_width=True):
-            st.session_state.page = "Ultrasound Analysis"
-            st.rerun()
-
-    st.markdown("""
-    <div style="background:#FFFFFF;padding:20px 22px;border-radius:15px;
-    border-left:5px solid #A78BCB;margin-top:24px;">
-      <h4 style="color:#604582;">About this research</h4>
-      <p style="color:#594B6D;">
-        PCOS Insight brings together clinical machine learning,
-        ultrasound deep learning, and explainable AI in a research
-        and educational prototype.
-      </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.caption(
-        "Research and educational prototype only. "
-        "AI predictions are not medical diagnoses."
-    )
+else:
+    page = render_navigation()
+    st.markdown("<div class='nav-divider'></div>", unsafe_allow_html=True)
 
 
-# ==================================================
-# ABOUT US
-# ==================================================
-
-elif page == "About Us":
+if page == "About Us":
 
     st.title("About PCOS Insight")
     st.write(
