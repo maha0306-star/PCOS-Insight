@@ -463,16 +463,24 @@ with header_left:
     st.markdown("""
     <div class="brand-row">
       <div class="brand-mark">
-        <svg width="31" height="31" viewBox="0 0 64 64" fill="none"
-             xmlns="http://www.w3.org/2000/svg" aria-label="Abstract woman icon">
-          <path d="M32 7c-9 0-16 7-16 16 0 7 4 12 10 15v5h12v-5c6-3 10-8 10-15C48 14 41 7 32 7Z"
-                stroke="white" stroke-width="3.5" stroke-linecap="round"/>
-          <path d="M25 47h14M25 53h14M32 43v10"
-                stroke="white" stroke-width="3.5" stroke-linecap="round"/>
-          <path d="M25 22c2-4 5-6 9-6" stroke="#E9DDF8"
-                stroke-width="3" stroke-linecap="round"/>
-        </svg>
-      </div>
+    <svg width="38" height="38" viewBox="0 0 64 64"
+         fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="32" r="29" fill="#7652A4"/>
+        <path d="M32 12
+                 C22 12 17 20 19 29
+                 C20 35 25 38 29 40
+                 L29 46
+                 L24 52
+                 M35 40
+                 L35 46
+                 L40 52
+                 M29 46 L35 46"
+              stroke="white" stroke-width="3.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="32" cy="25" r="8"
+                stroke="white" stroke-width="3"/>
+    </svg>
+</div>
       <div>
         <div class="brand-name">PCOS Insight</div>
         <div class="brand-subtitle">Women's health research</div>
