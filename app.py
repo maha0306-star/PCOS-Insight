@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -460,18 +459,21 @@ NAV_PAGES = [
 header_left, header_right = st.columns([1.15, 2.4], vertical_alignment="center")
 
 with header_left:
-    st.markdown("""
-    <div class="brand-mark">
-    <img src="pcos_insight_logo.png"
-         alt="PCOS Insight Logo"
-         style="width:48px;height:48px;object-fit:contain;">
-</div>
-      <div>
+    logo_col, brand_text_col = st.columns(
+        [1, 3.8],
+        vertical_alignment="center"
+    )
+
+    with logo_col:
+        logo_path = os.path.join(BASE_DIR, "pcos_insight_logo.png")
+        if os.path.exists(logo_path):
+            st.image(logo_path, width=48)
+
+    with brand_text_col:
+        st.markdown("""
         <div class="brand-name">PCOS Insight</div>
         <div class="brand-subtitle">Women's health research</div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
 with header_right:
     current_index = (
