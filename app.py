@@ -568,6 +568,37 @@ if st.session_state.page == "Home":
 
     if page == "Home":
         st.markdown("<div style='height:22px'></div>", unsafe_allow_html=True)
+
+        st.markdown("## Explore PCOS Insight")
+        clinical_card, ultrasound_card = st.columns(2, gap="large")
+
+        with clinical_card:
+            st.markdown("""
+            <div style="background:#F0E8FA;padding:22px;border-radius:16px;
+                        border:1px solid #E2D5F2;min-height:170px;">
+              <div style="font-size:25px;color:#7652A4;font-weight:800;">Clinical Analysis</div>
+              <p style="color:#51445F;">Explore clinical biomarkers, four-class subtype predictions,
+              and SHAP-based model explanations.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Open Clinical Analysis", key="home_clinical", use_container_width=True):
+                st.session_state.page = "Clinical Analysis"
+                st.rerun()
+
+        with ultrasound_card:
+            st.markdown("""
+            <div style="background:#F0E8FA;padding:22px;border-radius:16px;
+                        border:1px solid #E2D5F2;min-height:170px;">
+              <div style="font-size:25px;color:#7652A4;font-weight:800;">Ultrasound Analysis</div>
+              <p style="color:#51445F;">Upload an ovarian ultrasound image and view the CNN-based
+              PCO or Comparison Class prediction.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("Open Ultrasound Analysis", key="home_ultrasound", use_container_width=True):
+                st.session_state.page = "Ultrasound Analysis"
+                st.rerun()
+
+        st.markdown("<div style='height:22px'></div>", unsafe_allow_html=True)
         st.markdown("## Research at a glance")
 
         stat1, stat2, stat3 = st.columns(3)
@@ -635,21 +666,21 @@ if page == "About Us":
     )
 
     st.subheader("Research Objectives")
-    st.markdown(
-        "- Explore clinical biomarker patterns for PCOS subtype classification.\\n"
-        "- Analyse ovarian ultrasound images using deep learning.\\n"
-        "- Provide model explainability for clinical predictions.\\n"
-        "- Present cautious, educational AI-generated result summaries."
-    )
+    st.markdown("""
+    - Explore clinical biomarker patterns for PCOS subtype classification.
+    - Analyse ovarian ultrasound images using deep learning.
+    - Provide model explainability for clinical predictions.
+    - Present cautious, educational AI-generated result summaries.
+    """)
 
     st.subheader("Technologies Used")
-    st.markdown(
-        "- Python and Streamlit\\n"
-        "- XGBoost for clinical classification\\n"
-        "- TensorFlow / Keras for ultrasound image classification\\n"
-        "- SHAP for clinical model explainability\\n"
-        "- Groq API for educational AI advisories"
-    )
+    st.markdown("""
+    - Python and Streamlit
+    - XGBoost for clinical classification
+    - TensorFlow / Keras for ultrasound image classification
+    - SHAP for clinical model explainability
+    - Groq API for educational AI advisories
+    """)
 
     st.info(
         "The clinical and ultrasound models perform separate tasks. "
@@ -664,25 +695,29 @@ if page == "About Us":
 elif page == "Contact Us":
 
     st.title("Contact Us")
-    st.write(
-        "For questions about this research prototype, collaboration, "
-        "or technical feedback, please contact the project team through "
-        "your institution or the official project contact channel."
-    )
-
-    st.subheader("Project Information")
-    st.write("Project: PCOS Insight")
-    st.write(
-        "Research area: Multimodal PCOS analysis using clinical biomarkers, "
-        "ultrasound features, and explainable AI."
-    )
+    st.write("For questions or feedback about the PCOS Insight research project, contact our team.")
 
     st.subheader("Project Team")
-    st.write(
-        "Team member names, department, institution, project guide, "
-        "and official contact email can be added here after confirming "
-        "the details intended for public display."
-    )
+    st.markdown("""
+    **Team Members**
+
+    - Madhu Parameswari Ganesan
+    - Mahalakshmi M
+    - Dhivyalakshmi S
+
+    **Department of CSE**  
+    SASTRA Deemed University  
+    Thanjavur, India
+
+    **Project Guide**  
+    Dr. Anushiadevi R  
+    Department of ICT  
+    SASTRA Deemed University  
+    Thanjavur, India
+    """)
+
+    st.subheader("Contact Email")
+    st.markdown("[triotech1203@gmail.com](mailto:triotech1203@gmail.com)")
 
 
 # ==================================================
