@@ -243,6 +243,28 @@ header[data-testid="stHeader"] {
     font-weight: 700;
 }
 
+/* Top navigation styling */
+
+div[role="radiogroup"] {
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.78);
+    padding: 10px 14px;
+    border: 1px solid #E5D9F3;
+    border-radius: 14px;
+}
+
+div[role="radiogroup"] label {
+    background: #F3EDFA;
+    border: 1px solid #E5D9F3;
+    border-radius: 9px;
+    padding: 7px 13px;
+}
+
+.nav-divider {
+    border-bottom: 1px solid #E5D9F3;
+    margin: 4px 0 22px 0;
+}
+
 /* Advisory content */
 
 .advisory-text {
@@ -325,13 +347,39 @@ def load_ultrasound_model():
 
 
 # --------------------------------------------------
-# PAGE NAVIGATION — NO SIDEBAR
+# TOP NAVIGATION
 # --------------------------------------------------
 
 if "page" not in st.session_state:
     st.session_state.page = "Home"
 
+NAV_PAGES = [
+    "Home",
+    "Clinical Analysis",
+    "Ultrasound Analysis",
+    "About Us",
+    "Contact Us"
+]
+
+# Horizontal navigation bar. The selected page is stored in session state.
+current_index = (
+    NAV_PAGES.index(st.session_state.page)
+    if st.session_state.page in NAV_PAGES
+    else 0
+)
+
+selected_page = st.radio(
+    "Main navigation",
+    NAV_PAGES,
+    index=current_index,
+    horizontal=True,
+    label_visibility="collapsed"
+)
+
+st.session_state.page = selected_page
 page = st.session_state.page
+
+st.markdown("<div class='nav-divider'></div>", unsafe_allow_html=True)
 
 
 # ==================================================
@@ -425,6 +473,79 @@ if page == "Home":
     st.caption(
         "Research and educational prototype only. "
         "AI predictions are not medical diagnoses."
+    )
+
+
+# ==================================================
+# ABOUT US
+# ==================================================
+
+elif page == "About Us":
+
+    st.title("About PCOS Insight")
+    st.write(
+        "PCOS Insight is a research-oriented application designed to "
+        "explore PCOS-related clinical information and ovarian ultrasound "
+        "images using machine-learning and deep-learning techniques."
+    )
+
+    st.subheader("Project Overview")
+    st.write(
+        "The application contains two independent analysis modules. "
+        "The Clinical Analysis module uses an XGBoost model for four-class "
+        "PCOS subtype classification and provides patient-specific SHAP "
+        "explanations. The Ultrasound Analysis module uses a CNN to classify "
+        "uploaded images into PCO and Comparison Class."
+    )
+
+    st.subheader("Research Objectives")
+    st.markdown(
+        "- Explore clinical biomarker patterns for PCOS subtype classification.\\n"
+        "- Analyse ovarian ultrasound images using deep learning.\\n"
+        "- Provide model explainability for clinical predictions.\\n"
+        "- Present cautious, educational AI-generated result summaries."
+    )
+
+    st.subheader("Technologies Used")
+    st.markdown(
+        "- Python and Streamlit\\n"
+        "- XGBoost for clinical classification\\n"
+        "- TensorFlow / Keras for ultrasound image classification\\n"
+        "- SHAP for clinical model explainability\\n"
+        "- Groq API for educational AI advisories"
+    )
+
+    st.info(
+        "The clinical and ultrasound models perform separate tasks. "
+        "The ultrasound model does not predict the four clinical subtypes."
+    )
+
+
+# ==================================================
+# CONTACT US
+# ==================================================
+
+elif page == "Contact Us":
+
+    st.title("Contact Us")
+    st.write(
+        "For questions about this research prototype, collaboration, "
+        "or technical feedback, please contact the project team through "
+        "your institution or the official project contact channel."
+    )
+
+    st.subheader("Project Information")
+    st.write("Project: PCOS Insight")
+    st.write(
+        "Research area: Multimodal PCOS analysis using clinical biomarkers, "
+        "ultrasound features, and explainable AI."
+    )
+
+    st.subheader("Project Team")
+    st.write(
+        "Team member names, department, institution, project guide, "
+        "and official contact email can be added here after confirming "
+        "the details intended for public display."
     )
 
 
