@@ -296,12 +296,12 @@ div[role="radiogroup"] label {
     width:48px;
     height:48px;
     flex:0 0 48px;
-    border-radius:50%;
     display:flex;
     align-items:center;
     justify-content:center;
-    background:linear-gradient(145deg,#7652A4,#B99BE0);
-    box-shadow:0 5px 14px rgba(91,62,128,.18);
+    background:transparent;
+    box-shadow:none;
+    border-radius:0;
 }
 .brand-name {
     color:#302640;
@@ -461,25 +461,10 @@ header_left, header_right = st.columns([1.15, 2.4], vertical_alignment="center")
 
 with header_left:
     st.markdown("""
-    <div class="brand-row">
-      <div class="brand-mark">
-    <svg width="38" height="38" viewBox="0 0 64 64"
-         fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="32" cy="32" r="29" fill="#7652A4"/>
-        <path d="M32 12
-                 C22 12 17 20 19 29
-                 C20 35 25 38 29 40
-                 L29 46
-                 L24 52
-                 M35 40
-                 L35 46
-                 L40 52
-                 M29 46 L35 46"
-              stroke="white" stroke-width="3.5"
-              stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="32" cy="25" r="8"
-                stroke="white" stroke-width="3"/>
-    </svg>
+    <div class="brand-mark">
+    <img src="pcos_insight_logo.png"
+         alt="PCOS Insight Logo"
+         style="width:48px;height:48px;object-fit:contain;">
 </div>
       <div>
         <div class="brand-name">PCOS Insight</div>
