@@ -326,18 +326,22 @@ p, li, label, [data-testid="stMarkdownContainer"] {
 
 /* ---------- Login / signup split-screen design ---------- */
 .auth-brand-panel {
-    min-height: 500px;
+    /* A true vertical branding sidebar, not a floating rounded card */
+    min-height: 560px;
     height: 100%;
+    width: 100%;
     box-sizing: border-box;
-    padding: 30px 28px;
-    border-radius: 24px;
-    background: linear-gradient(145deg, #E9DFF7 0%, #D8C8EE 52%, #C7B0E4 100%);
-    border: 1px solid #D8C7EC;
+    padding: 48px 34px;
+    border-radius: 0 !important;
+    background: linear-gradient(180deg, #EAE2F7 0%, #D8C8EE 100%);
+    border: 0 !important;
+    border-right: 1px solid #D1BFE8;
+    box-shadow: none !important;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
 }
 .auth-lock {
     width: 62px;
@@ -353,8 +357,8 @@ p, li, label, [data-testid="stMarkdownContainer"] {
 }
 .auth-brand-logo {
     display: block;
-    width: 68px;
-    height: 68px;
+    width: 64px;
+    height: 64px;
     object-fit: contain;
     border-radius: 18px;
     margin: 0 0 18px 0;
@@ -377,7 +381,7 @@ p, li, label, [data-testid="stMarkdownContainer"] {
 }
 .auth-brand-title {
     color: #30243F;
-    font-size: clamp(30px, 2.5vw, 38px);
+    font-size: clamp(28px, 2.2vw, 36px);
     font-weight: 850;
     line-height: 1.12;
     letter-spacing: -.8px;
@@ -428,7 +432,9 @@ p, li, label, [data-testid="stMarkdownContainer"] {
     .auth-brand-panel {
         min-height: 250px;
         padding: 26px 24px;
-        border-radius: 18px;
+        border-radius: 0 !important;
+        border-right: 0;
+        border-bottom: 1px solid #D1BFE8;
         margin-bottom: 10px;
     }
     .auth-lock { width: 48px; height: 48px; font-size: 24px; margin-bottom: 16px; }
@@ -633,7 +639,7 @@ def show_auth_page():
 
     # Two-panel authentication layout: brand panel on the left, form on the right.
     # Keep the branding panel compact; give the login form more room.
-    brand_col, form_col = st.columns([0.72, 1.28], gap="medium")
+    brand_col, form_col = st.columns([0.85, 1.55], gap="large")
 
     with brand_col:
         # Reuse the exact logo asset displayed in the Home page navigation.
