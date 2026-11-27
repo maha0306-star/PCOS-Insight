@@ -56,6 +56,16 @@ CLINICAL_MODEL_PATH = os.path.join(BASE_DIR, "xgboost_model.json")
 
 st.markdown("""
 <style>
+/* Hide Streamlit's top-right toolbar (Share, Star, Edit, GitHub and menu) */
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+#MainMenu,
+.stDeployButton {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+}
 /* ---------- Global page ---------- */
 .stApp,
 [data-testid="stAppViewContainer"] {
