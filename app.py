@@ -289,6 +289,121 @@ p, li, label, [data-testid="stMarkdownContainer"] {
     text-align: center;
 }
 
+/* ---------- Login / signup split-screen design ---------- */
+.auth-brand-panel {
+    min-height: 570px;
+    height: 100%;
+    box-sizing: border-box;
+    padding: clamp(34px, 5vw, 68px);
+    border-radius: 24px;
+    background: linear-gradient(145deg, #E9DFF7 0%, #D8C8EE 52%, #C7B0E4 100%);
+    border: 1px solid #D8C7EC;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    overflow-wrap: anywhere;
+}
+.auth-lock {
+    width: 62px;
+    height: 62px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.78);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 22px rgba(82,55,115,.10);
+}
+.auth-brand-logo {
+    display: block;
+    width: 86px;
+    height: 86px;
+    object-fit: contain;
+    border-radius: 18px;
+    margin: 0 0 26px 0;
+    background: rgba(255,255,255,.78);
+    padding: 8px;
+    box-sizing: border-box;
+    box-shadow: 0 8px 22px rgba(82,55,115,.10);
+}
+.auth-login-lock {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: #F0E8FA;
+    border: 1px solid #E1D4F0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 27px;
+    margin: 4px auto 10px;
+}
+.auth-brand-title {
+    color: #30243F;
+    font-size: clamp(34px, 3.2vw, 48px);
+    font-weight: 850;
+    line-height: 1.12;
+    letter-spacing: -.8px;
+    max-width: 100%;
+    white-space: normal;
+}
+.auth-brand-subtitle {
+    color: #674C89;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2.2px;
+    margin-top: 12px;
+}
+.auth-brand-divider {
+    width: 68px;
+    height: 4px;
+    border-radius: 8px;
+    background: #8064A8;
+    margin: 34px 0 26px;
+}
+.auth-quote {
+    color: #453454;
+    font-size: clamp(19px, 1.7vw, 25px);
+    font-weight: 550;
+    line-height: 1.55;
+    max-width: 480px;
+}
+.auth-brand-foot {
+    color: #6D5785;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin-top: 48px;
+}
+.auth-form-title {
+    text-align: center;
+    margin-top: 12px;
+}
+.auth-form-subtitle {
+    text-align: center;
+    color: #786B86 !important;
+    margin-bottom: 28px;
+}
+@media (min-width: 1100px) {
+    .auth-brand-panel { min-height: 610px; }
+}
+@media (max-width: 768px) {
+    .auth-brand-panel {
+        min-height: 250px;
+        padding: 26px 24px;
+        border-radius: 18px;
+        margin-bottom: 10px;
+    }
+    .auth-lock { width: 48px; height: 48px; font-size: 24px; margin-bottom: 16px; }
+    .auth-brand-title { font-size: 32px; }
+    .auth-brand-subtitle { font-size: 9px; letter-spacing: 1.5px; }
+    .auth-brand-divider { margin: 18px 0 14px; }
+    .auth-quote { font-size: 16px; }
+    .auth-brand-foot { margin-top: 20px; font-size: 9px; }
+}
+
 /* ---------- Desktop and large-screen refinement ---------- */
 @media (min-width: 1100px) {
     .block-container {
@@ -470,15 +585,6 @@ def get_supabase_client():
 
 
 def show_auth_page():
-    st.markdown("""
-    <div class="brand-row">
-      <div>
-        <div class="brand-name">PCOS Insight</div>
-        <div class="brand-subtitle">Women's health research</div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
     supabase = get_supabase_client()
     if supabase is None:
         st.error(
@@ -487,35 +593,66 @@ def show_auth_page():
         )
         st.stop()
 
-    left, center, right = st.columns([0.6, 1.8, 0.6])
-    with center:
-        with st.container(border=True):
-            st.markdown("<h2 style='text-align:center'>Welcome to PCOS Insight</h2>",
-                        unsafe_allow_html=True)
-            st.markdown(
-                "<p style='text-align:center;color:#786B86'>"
-                "Sign in to access the research platform</p>",
-                unsafe_allow_html=True
+    if "auth_mode" not in st.session_state:
+        st.session_state.auth_mode = "login"
+
+    # Two-panel authentication layout: brand panel on the left, form on the right.
+    brand_col, form_col = st.columns([1.08, 0.92], gap="large")
+
+    with brand_col:
+        # Reuse the exact logo asset displayed in the Home page navigation.
+        # Embed it as a data URI so it renders reliably inside the branded panel.
+        import base64
+        logo_path = os.path.join(BASE_DIR, "pcos_insight_logo.png")
+        logo_html = ""
+        if os.path.exists(logo_path):
+            with open(logo_path, "rb") as logo_file:
+                logo_data = base64.b64encode(logo_file.read()).decode("utf-8")
+            logo_html = (
+                f'<img class="auth-brand-logo" '
+                f'src="data:image/png;base64,{logo_data}" '
+                f'alt="PCOS Insight logo">'
             )
 
-            if "auth_mode" not in st.session_state:
-                st.session_state.auth_mode = "login"
+        st.markdown(
+            f"""
+            <div class="auth-brand-panel">
+                {logo_html}
+                <div class="auth-brand-title">PCOS Insight</div>
+                <div class="auth-brand-subtitle">WOMEN'S HEALTH RESEARCH</div>
+                <div class="auth-brand-divider"></div>
+                <div class="auth-quote">
+                    “Turning clinical data and ultrasound insights into
+                    clearer, explainable research.”
+                </div>
+                <div class="auth-brand-foot">MULTIMODAL AI · EXPLAINABLE INSIGHTS</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with form_col:
+        with st.container(border=True):
+            st.markdown(
+                "<div class='auth-login-lock'>🔒</div><h2 class='auth-form-title'>Welcome back</h2>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                "<p class='auth-form-subtitle'>Sign in to continue to PCOS Insight</p>",
+                unsafe_allow_html=True
+            )
 
             if st.session_state.auth_mode == "login":
                 with st.form("pcos_login_form"):
                     email = st.text_input(
-                        "Email",
-                        placeholder="Enter your email address",
-                        key="login_email"
+                        "Email", placeholder="Enter your email address", key="login_email"
                     )
                     password = st.text_input(
-                        "Password",
-                        type="password",
-                        placeholder="Enter your password",
-                        key="login_password"
+                        "Password", type="password",
+                        placeholder="Enter your password", key="login_password"
                     )
                     login_clicked = st.form_submit_button(
-                        "Login", use_container_width=True
+                        "🔒  Login securely", use_container_width=True
                     )
 
                 if login_clicked:
@@ -524,8 +661,7 @@ def show_auth_page():
                     else:
                         try:
                             response = supabase.auth.sign_in_with_password({
-                                "email": email.strip(),
-                                "password": password
+                                "email": email.strip(), "password": password
                             })
                             if response.user:
                                 st.session_state.authenticated = True
@@ -544,34 +680,26 @@ def show_auth_page():
                                 st.error("Incorrect email or password.")
                             else:
                                 st.error(
-                                    "Unable to log in. Please check your details "
-                                    "and try again."
+                                    "Unable to log in. Please check your details and try again."
                                 )
 
                 st.caption("New to PCOS Insight?")
-                if st.button("Create Account", use_container_width=True,
-                             key="go_to_signup"):
+                if st.button("Create Account", use_container_width=True, key="go_to_signup"):
                     st.session_state.auth_mode = "signup"
                     st.rerun()
 
             else:
                 with st.form("pcos_signup_form"):
                     new_email = st.text_input(
-                        "Email",
-                        placeholder="Enter your email address",
-                        key="signup_email"
+                        "Email", placeholder="Enter your email address", key="signup_email"
                     )
                     new_password = st.text_input(
-                        "Create password",
-                        type="password",
-                        placeholder="At least 8 characters",
-                        key="signup_password"
+                        "Create password", type="password",
+                        placeholder="At least 8 characters", key="signup_password"
                     )
                     confirm_password = st.text_input(
-                        "Confirm password",
-                        type="password",
-                        placeholder="Re-enter your password",
-                        key="confirm_password"
+                        "Confirm password", type="password",
+                        placeholder="Re-enter your password", key="confirm_password"
                     )
                     signup_clicked = st.form_submit_button(
                         "Create Account", use_container_width=True
@@ -587,8 +715,7 @@ def show_auth_page():
                     else:
                         try:
                             response = supabase.auth.sign_up({
-                                "email": new_email.strip(),
-                                "password": new_password
+                                "email": new_email.strip(), "password": new_password
                             })
                             if response.session:
                                 st.session_state.authenticated = True
@@ -608,8 +735,7 @@ def show_auth_page():
                             )
 
                 st.caption("Already have an account?")
-                if st.button("Back to Login", use_container_width=True,
-                             key="back_to_login"):
+                if st.button("← Back to Login", use_container_width=True, key="back_to_login"):
                     st.session_state.auth_mode = "login"
                     st.rerun()
 
