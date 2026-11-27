@@ -291,10 +291,10 @@ p, li, label, [data-testid="stMarkdownContainer"] {
 
 /* ---------- Login / signup split-screen design ---------- */
 .auth-brand-panel {
-    min-height: 570px;
+    min-height: 500px;
     height: 100%;
     box-sizing: border-box;
-    padding: clamp(34px, 5vw, 68px);
+    padding: 30px 28px;
     border-radius: 24px;
     background: linear-gradient(145deg, #E9DFF7 0%, #D8C8EE 52%, #C7B0E4 100%);
     border: 1px solid #D8C7EC;
@@ -318,11 +318,11 @@ p, li, label, [data-testid="stMarkdownContainer"] {
 }
 .auth-brand-logo {
     display: block;
-    width: 86px;
-    height: 86px;
+    width: 68px;
+    height: 68px;
     object-fit: contain;
     border-radius: 18px;
-    margin: 0 0 26px 0;
+    margin: 0 0 18px 0;
     background: rgba(255,255,255,.78);
     padding: 8px;
     box-sizing: border-box;
@@ -342,7 +342,7 @@ p, li, label, [data-testid="stMarkdownContainer"] {
 }
 .auth-brand-title {
     color: #30243F;
-    font-size: clamp(34px, 3.2vw, 48px);
+    font-size: clamp(30px, 2.5vw, 38px);
     font-weight: 850;
     line-height: 1.12;
     letter-spacing: -.8px;
@@ -361,21 +361,21 @@ p, li, label, [data-testid="stMarkdownContainer"] {
     height: 4px;
     border-radius: 8px;
     background: #8064A8;
-    margin: 34px 0 26px;
+    margin: 24px 0 18px;
 }
 .auth-quote {
     color: #453454;
-    font-size: clamp(19px, 1.7vw, 25px);
+    font-size: clamp(16px, 1.25vw, 19px);
     font-weight: 550;
     line-height: 1.55;
-    max-width: 480px;
+    max-width: 360px;
 }
 .auth-brand-foot {
     color: #6D5785;
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 1.5px;
-    margin-top: 48px;
+    margin-top: 30px;
 }
 .auth-form-title {
     text-align: center;
@@ -387,7 +387,7 @@ p, li, label, [data-testid="stMarkdownContainer"] {
     margin-bottom: 28px;
 }
 @media (min-width: 1100px) {
-    .auth-brand-panel { min-height: 610px; }
+    .auth-brand-panel { min-height: 500px; }
 }
 @media (max-width: 768px) {
     .auth-brand-panel {
@@ -597,7 +597,8 @@ def show_auth_page():
         st.session_state.auth_mode = "login"
 
     # Two-panel authentication layout: brand panel on the left, form on the right.
-    brand_col, form_col = st.columns([1.08, 0.92], gap="large")
+    # Keep the branding panel compact; give the login form more room.
+    brand_col, form_col = st.columns([0.72, 1.28], gap="medium")
 
     with brand_col:
         # Reuse the exact logo asset displayed in the Home page navigation.
