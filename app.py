@@ -56,6 +56,18 @@ CLINICAL_MODEL_PATH = os.path.join(BASE_DIR, "xgboost_model.json")
 
 st.markdown("""
 <style>
+/* Hide radio circles in homepage navigation */
+.st-key-main_navigation [role="radio"] > div:first-child {
+    display: none !important;
+}
+
+.st-key-main_navigation [role="radio"] svg {
+    display: none !important;
+}
+
+.st-key-main_navigation input[type="radio"] {
+    display: none !important;
+}
 /* Remove the entire empty Streamlit top header strip, not just its icons */
 header[data-testid="stHeader"],
 [data-testid="stHeader"],
