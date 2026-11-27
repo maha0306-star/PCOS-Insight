@@ -320,6 +320,23 @@ header[data-testid="stHeader"] {
     text-transform:uppercase;
     margin-top:4px;
 }
+.st-key-nav_home button, .st-key-nav_clinical_analysis button,
+.st-key-nav_ultrasound_analysis button, .st-key-nav_about_us button,
+.st-key-nav_contact_us button {
+    background: transparent !important;
+    border: none !important;
+    color: #493B5D !important;
+    padding: 5px 2px !important;
+    box-shadow: none !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+}
+.st-key-nav_home button:hover, .st-key-nav_clinical_analysis button:hover,
+.st-key-nav_ultrasound_analysis button:hover, .st-key-nav_about_us button:hover,
+.st-key-nav_contact_us button:hover {
+    color: #7652A4 !important;
+    text-decoration: underline !important;
+}
 .st-key-home_hero {
     background: linear-gradient(112deg, #B69ADD 0%, #C6B0E5 58%, #D4C4EB 100%);
     padding: 20px 30px 0 30px;
@@ -387,6 +404,169 @@ header[data-testid="stHeader"] {
 
 </style>
 """, unsafe_allow_html=True)
+
+
+# --------------------------------------------------
+# PCOS INSIGHT AUTHENTICATION (SUPABASE)
+# --------------------------------------------------
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+from supabase import create_client
+
+
+def get_supabase_client():
+    """Create a Supabase client using Streamlit Cloud Secrets."""
+    try:
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_ANON_KEY"]
+        return create_client(url, key)
+    except Exception:
+        return None
+
+
+def show_auth_page():
+    """Show the lavender login / create-account screen."""
+    st.markdown("""
+    <style>
+      [data-testid="stSidebar"] {background:#EAE2F7 !important;}
+      .auth-card {
+        background:rgba(255,255,255,.88); border:1px solid #E5D9F3;
+        border-radius:22px; padding:30px 34px 25px 34px;
+        box-shadow:0 12px 35px rgba(92,65,128,.10);
+      }
+      .auth-title {text-align:center;color:#604582;font-size:30px;
+        font-weight:800;margin-bottom:3px;}
+      .auth-subtitle {text-align:center;color:#806A99;font-size:14px;
+        margin-bottom:22px;}
+      .auth-link {text-align:center;color:#7652A4;font-size:14px;}
+      .auth-side-title {font-size:20px;font-weight:800;color:#604582;}
+    </style>
+    """, unsafe_allow_html=True)
+
+    with st.sidebar:
+        logo_path = os.path.join(BASE_DIR, "pcos_insight_logo.png")
+        if os.path.exists(logo_path):
+            st.image(logo_path, width=72)
+        st.markdown('<div class="auth-side-title">PCOS Insight</div>', unsafe_allow_html=True)
+        st.caption("Women's health research")
+        st.markdown("---")
+        st.markdown(
+            "*“Small steps towards better understanding create meaningful change.”*"
+        )
+        st.caption("AI-powered PCOS research platform")
+
+    supabase = get_supabase_client()
+    if supabase is None:
+        st.error(
+            "Login is not configured yet. Add SUPABASE_URL and "
+            "SUPABASE_ANON_KEY to your Streamlit Cloud Secrets."
+        )
+        st.info("The setup instructions are included with the updated app files.")
+        st.stop()
+
+    left, center, right = st.columns([1, 1.65, 1])
+    with center:
+        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
+        st.markdown('<div class="auth-title">PCOS Insight</div>', unsafe_allow_html=True)
+
+        if "auth_mode" not in st.session_state:
+            st.session_state.auth_mode = "login"
+
+        if st.session_state.auth_mode == "login":
+            st.markdown('<div class="auth-subtitle">Login to PCOS Insight</div>', unsafe_allow_html=True)
+            with st.form("pcos_login_form"):
+                email = st.text_input("Email", placeholder="Enter your email address")
+                password = st.text_input("Password", type="password", placeholder="Enter your password")
+                login_clicked = st.form_submit_button("Login", use_container_width=True)
+
+            if login_clicked:
+                if not email.strip() or not password:
+                    st.warning("Please enter both your email and password.")
+                else:
+                    try:
+                        response = supabase.auth.sign_in_with_password(
+                            {"email": email.strip(), "password": password}
+                        )
+                        if response.user:
+                            st.session_state.authenticated = True
+                            st.session_state.user_email = email.strip()
+                            st.session_state.auth_mode = "login"
+                            st.rerun()
+                        else:
+                            st.error("Login failed. Please check your details and try again.")
+                    except Exception as exc:
+                        message = str(exc).lower()
+                        if "invalid login credentials" in message or "invalid password" in message:
+                            st.error("Incorrect email or password. Please try again.")
+                        elif "email not confirmed" in message:
+                            st.error("Please verify your email using the confirmation link sent to your inbox.")
+                        else:
+                            st.error("Unable to log in. Please check your email and password, then try again.")
+
+            st.markdown('<div class="auth-link">New user?</div>', unsafe_allow_html=True)
+            if st.button("Create Account", key="go_to_signup", use_container_width=True, type="tertiary"):
+                st.session_state.auth_mode = "signup"
+                st.rerun()
+
+        else:
+            st.markdown('<div class="auth-subtitle">Create your PCOS Insight account</div>', unsafe_allow_html=True)
+            with st.form("pcos_signup_form"):
+                new_email = st.text_input("Email", placeholder="Enter your email address")
+                new_password = st.text_input("Create password", type="password", placeholder="At least 8 characters")
+                confirm_password = st.text_input("Confirm password", type="password", placeholder="Re-enter your password")
+                signup_clicked = st.form_submit_button("Create Account", use_container_width=True)
+
+            if signup_clicked:
+                if not new_email.strip() or not new_password or not confirm_password:
+                    st.warning("Please complete all fields.")
+                elif new_password != confirm_password:
+                    st.error("The passwords do not match. Please try again.")
+                elif len(new_password) < 8:
+                    st.error("Please choose a password with at least 8 characters.")
+                else:
+                    try:
+                        response = supabase.auth.sign_up(
+                            {"email": new_email.strip(), "password": new_password}
+                        )
+                        if response.session:
+                            st.session_state.authenticated = True
+                            st.session_state.user_email = new_email.strip()
+                            st.session_state.auth_mode = "login"
+                            st.success("Account created successfully!")
+                            st.rerun()
+                        else:
+                            st.success("Account created. Please check your email and click the confirmation link, then log in.")
+                            st.session_state.auth_mode = "login"
+                    except Exception:
+                        st.error("We couldn't create this account. The email may already be registered, or the details may be invalid.")
+
+            st.markdown('<div class="auth-link">Already have an account?</div>', unsafe_allow_html=True)
+            if st.button("Back to Login", key="back_to_login", use_container_width=True, type="tertiary"):
+                st.session_state.auth_mode = "login"
+                st.rerun()
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+
+# Require authentication before displaying any application page.
+if not st.session_state.get("authenticated", False):
+    show_auth_page()
+    st.stop()
+
+with st.sidebar:
+    st.caption(f"Signed in as {st.session_state.get('user_email', '')}")
+    if st.button("Log out", use_container_width=True):
+        try:
+            auth_client = get_supabase_client()
+            if auth_client is not None:
+                auth_client.auth.sign_out()
+        except Exception:
+            pass
+        st.session_state.authenticated = False
+        st.session_state.pop("user_email", None)
+        st.session_state.auth_mode = "login"
+        st.rerun()
 
 
 # --------------------------------------------------
@@ -499,14 +679,24 @@ def render_navigation():
             """, unsafe_allow_html=True)
 
     with header_right:
-        st.radio(
-            "Main navigation",
-            NAV_PAGES,
-            key="main_navigation",
-            horizontal=True,
-            label_visibility="collapsed",
-            on_change=sync_page_from_navigation
-        )
+        nav_slots = st.columns([1.0, 0.12, 1.65, 0.12, 1.8, 0.12, 1.0, 0.12, 1.15])
+        nav_items = [
+            (0, "Home"), (2, "Clinical Analysis"),
+            (4, "Ultrasound Analysis"), (6, "About Us"), (8, "Contact Us")
+        ]
+        for slot, label in nav_items:
+            with nav_slots[slot]:
+                st.button(
+                    label,
+                    key=f"nav_{label.lower().replace(' ', '_')}",
+                    type="tertiary",
+                    use_container_width=True,
+                    on_click=set_page,
+                    args=(label,)
+                )
+        for slot in [1, 3, 5, 7]:
+            with nav_slots[slot]:
+                st.markdown("<div style='text-align:center;color:#8064A8;padding-top:8px;'>|</div>", unsafe_allow_html=True)
 
     return st.session_state.page
 
