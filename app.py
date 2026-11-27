@@ -56,7 +56,9 @@ CLINICAL_MODEL_PATH = os.path.join(BASE_DIR, "xgboost_model.json")
 
 st.markdown("""
 <style>
-/* Hide Streamlit's top-right toolbar (Share, Star, Edit, GitHub and menu) */
+/* Remove the entire empty Streamlit top header strip, not just its icons */
+header[data-testid="stHeader"],
+[data-testid="stHeader"],
 [data-testid="stToolbar"],
 [data-testid="stDecoration"],
 [data-testid="stStatusWidget"],
@@ -65,7 +67,20 @@ st.markdown("""
     display: none !important;
     visibility: hidden !important;
     height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
+
+/* Prevent a leftover dark band where the header used to be */
+[data-testid="stAppViewContainer"] > .main {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
 /* ---------- Global page ---------- */
 .stApp,
 [data-testid="stAppViewContainer"] {
