@@ -62,11 +62,11 @@ st.markdown("""
     background: linear-gradient(135deg, #FAF8FE 0%, #F1ECFA 100%) !important;
 }
 .block-container {
-    max-width: 1200px;
-    padding-top: 1.2rem;
-    padding-bottom: 2.5rem;
-    padding-left: clamp(1rem, 3vw, 2.5rem);
-    padding-right: clamp(1rem, 3vw, 2.5rem);
+    max-width: 1480px;
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+    padding-left: clamp(1.5rem, 4vw, 4rem);
+    padding-right: clamp(1.5rem, 4vw, 4rem);
 }
 h1, h2, h3, h4 {
     color: #604582 !important;
@@ -244,22 +244,25 @@ p, li, label, [data-testid="stMarkdownContainer"] {
     background: rgba(255,255,255,.72);
     border: 1px solid #E5D9F3;
     border-radius: 16px;
-    padding: 10px 14px 2px;
-    margin-bottom: 18px;
+    padding: 12px 20px 4px;
+    margin: 8px 0 26px;
+    box-shadow: 0 5px 18px rgba(83, 59, 112, .055);
 }
 .st-key-main_navigation [role="radiogroup"] {
     display: flex;
     flex-wrap: wrap !important;
-    gap: 5px !important;
+    gap: 10px !important;
     align-items: center;
+    justify-content: center !important;
+    width: 100%;
 }
 .st-key-main_navigation [role="radiogroup"] label {
     background: transparent !important;
     border: 0 !important;
     border-radius: 9px !important;
-    padding: 7px 10px !important;
+    padding: 9px 17px !important;
     color: #493B5D !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     font-weight: 650 !important;
 }
 .st-key-main_navigation [role="radiogroup"] label:has(input:checked) {
@@ -286,9 +289,33 @@ p, li, label, [data-testid="stMarkdownContainer"] {
     text-align: center;
 }
 
+/* ---------- Desktop and large-screen refinement ---------- */
+@media (min-width: 1100px) {
+    .block-container {
+        max-width: 1480px !important;
+        padding-left: clamp(2.5rem, 4.2vw, 4.5rem) !important;
+        padding-right: clamp(2.5rem, 4.2vw, 4.5rem) !important;
+    }
+    .brand-name { font-size: 28px; }
+    .brand-subtitle { font-size: 11px; }
+    .hero-panel {
+        min-height: 350px;
+        padding: 46px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .hero-title { font-size: clamp(38px, 3.2vw, 52px); }
+    .hero-copy { max-width: 620px; font-size: 17px; }
+    .info-card { min-height: 170px; padding: 28px; }
+    .stat-card { min-height: 132px; padding: 24px 18px; }
+    .nav-wrap { padding-left: 24px; padding-right: 24px; }
+}
+
 /* ---------- Small screens ---------- */
 @media (max-width: 768px) {
     .block-container {
+        max-width: 100% !important;
         padding-top: .65rem !important;
         padding-left: .85rem !important;
         padding-right: .85rem !important;
@@ -672,10 +699,10 @@ def set_page(page_name):
 
 def render_navigation():
     logo_path = os.path.join(BASE_DIR, "pcos_insight_logo.png")
-    logo_col, title_col = st.columns([0.12, 0.88], vertical_alignment="center")
+    logo_col, title_col = st.columns([0.075, 0.925], vertical_alignment="center")
     with logo_col:
         if os.path.exists(logo_path):
-            st.image(logo_path, width=48)
+            st.image(logo_path, width=44)
         else:
             st.markdown("### ♀️")
     with title_col:
@@ -709,7 +736,7 @@ page = render_navigation()
 # ==================================================
 
 if page == "Home":
-    hero_text, hero_image = st.columns([1.05, 0.95], gap="medium",
+    hero_text, hero_image = st.columns([1.12, 0.88], gap="large",
                                        vertical_alignment="center")
     with hero_text:
         st.markdown("""
