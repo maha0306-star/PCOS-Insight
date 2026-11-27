@@ -877,14 +877,21 @@ def set_page(page_name):
     st.session_state.main_navigation = page_name
 
 
+
 def render_navigation():
     logo_path = os.path.join(BASE_DIR, "pcos_insight_logo.png")
-    logo_col, title_col = st.columns([0.075, 0.925], vertical_alignment="center")
+
+    logo_col, title_col = st.columns(
+        [0.075, 0.925],
+        vertical_alignment="center"
+    )
+
     with logo_col:
         if os.path.exists(logo_path):
             st.image(logo_path, width=44)
         else:
             st.markdown("### ♀️")
+
     with title_col:
         st.markdown(
             "<div class='brand-name'>PCOS Insight</div>"
@@ -893,19 +900,44 @@ def render_navigation():
         )
 
     st.markdown("<div class='nav-wrap'>", unsafe_allow_html=True)
-    selected = st.radio(
-        "Main navigation",
-        NAV_PAGES,
-        key="main_navigation",
-        horizontal=True,
-        label_visibility="collapsed",
-        on_change=lambda: setattr(
-            st.session_state, "page", st.session_state.main_navigation
-        )
-    )
+
+    if "page" not in st.session_state:
+        st.session_state.page = "Home"
+
+    pages = [
+        "Home",
+        "Clinical Analysis",
+        "Ultrasound Analysis",
+        "About Us",
+        "Contact Us"
+    ]
+
+    cols = st.columns([
+        1, 0.08, 1.6, 0.08, 1.8,
+        0.08, 0.8, 0.08, 1
+    ])
+
+    for i, page in enumerate(pages):
+        with cols[i * 2]:
+            if st.button(
+                page,
+                key=f"nav_{page}",
+                type="tertiary",
+                use_container_width=True
+            ):
+                st.session_state.page = page
+                st.rerun()
+
+        if i < len(pages) - 1:
+            with cols[i * 2 + 1]:
+                st.markdown(
+                    "<div style='text-align:center;color:#A99AB8;'>|</div>",
+                    unsafe_allow_html=True
+                )
+
     st.markdown("</div>", unsafe_allow_html=True)
-    st.session_state.page = selected
-    return selected
+
+    return st.session_state.page
 
 
 page = render_navigation()
