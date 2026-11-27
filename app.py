@@ -289,6 +289,16 @@ p, li, label, [data-testid="stMarkdownContainer"] {
     text-align: center;
 }
 
+/* ---------- Remove unwanted dark outline/shadow around login card ---------- */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    box-shadow: none !important;
+    outline: none !important;
+    border-color: #E5D9F3 !important;
+}
+[data-testid="stForm"] {
+    box-shadow: none !important;
+}
+
 /* ---------- Login / signup split-screen design ---------- */
 .auth-brand-panel {
     min-height: 500px;
@@ -633,7 +643,7 @@ def show_auth_page():
         )
 
     with form_col:
-        with st.container(border=True):
+        with st.container(border=False):
             st.markdown(
                 "<div class='auth-login-lock'>🔒</div><h2 class='auth-form-title'>Welcome back</h2>",
                 unsafe_allow_html=True
