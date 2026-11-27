@@ -9,5 +9,5 @@ shap
 tensorflow
 Pillow
 groq
-
+supabase
 huggingface_hub
