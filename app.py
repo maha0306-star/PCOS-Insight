@@ -1,104 +1,96 @@
-                    comparison_probability = 1.0 - output
-                    prediction = (
-                        "PCO"
-                        if pcos_probability >= comparison_probability
-                        else "Comparison Class"
-                    )
+import os
 
-                    advisory = None
-                    advisory_error = None
-                    try:
-                        advisory = generate_ultrasound_advisory(
-                            prediction,
-                            pcos_probability,
-                            comparison_probability
-                        )
-                    except Exception as exc:
-                        advisory_error = str(exc)
+import numpy as np
+import pandas as pd
+import streamlit as st
+import xgboost as xgb
+import tensorflow as tf
 
-                    st.session_state["ultrasound_result"] = {
-                        "prediction": prediction,
-                        "pcos_probability": pcos_probability,
-                        "comparison_probability": comparison_probability,
-                        "advisory": advisory,
-                        "advisory_error": advisory_error,
-                        "filename": uploaded_file.name,
-                        "image_size": image.size
-                    }
-            except Exception as exc:
-                st.error(f"Ultrasound prediction error: {exc}")
-                st.session_state.pop("ultrasound_result", None)
-
-    ultrasound_result = st.session_state.get("ultrasound_result")
-    if ultrasound_result:
-        current_filename = (
-            uploaded_file.name if uploaded_file is not None else None
-        )
-        if current_filename == ultrasound_result["filename"]:
-            prediction = ultrasound_result["prediction"]
-            st.markdown(
-                f"<div class='prediction-title'>Predicted Class: "
-                f"{prediction}</div>",
-                unsafe_allow_html=True
-            )
-
-            confidence = max(
-                ultrasound_result["pcos_probability"],
-                ultrasound_result["comparison_probability"]
-            )
-            st.metric("Prediction Confidence", f"{confidence * 100:.2f}%")
-
-            probability_df = pd.DataFrame({
-                "Class": ["PCO", "Comparison Class"],
-                "Probability (%)": [
-                    round(ultrasound_result["pcos_probability"] * 100, 2),
-                    round(ultrasound_result["comparison_probability"] * 100, 2)
-                ]
-            })
-
-            with st.expander("📊 Probability Analysis", expanded=True):
-                st.bar_chart(
-                    probability_df.set_index("Class")["Probability (%)"],
-                    color="#9B7BC4"
-                )
-                st.dataframe(
-                    probability_df,
-                    use_container_width=True,
-                    hide_index=True
-                )
-
-            with st.expander("💡 Ultrasound AI Advisory", expanded=False):
-                if ultrasound_result["advisory"]:
-                    st.markdown(ultrasound_result["advisory"])
-                    st.info(ADVISORY_DISCLAIMER)
-                else:
-                    st.warning(
-                        "The ultrasound advisory could not be generated. "
-                        f"{ultrasound_result['advisory_error'] or ''}"
-                    )
-
-            with st.expander("🖼️ Image Details", expanded=False):
-                st.write(f"**File name:** {ultrasound_result['filename']}")
-                st.write(
-                    f"**Original image dimensions:** "
-                    f"{ultrasound_result['image_size'][0]} × "
-                    f"{ultrasound_result['image_size'][1]} pixels"
-                )
-                st.caption(
-                    "The CNN classifies the uploaded image as PCO or "
-                    "Comparison Class only. It does not predict the four "
-                    "clinical PCOS subtypes."
-                )
-        else:
-            st.info("Upload and analyze an image to view its prediction.")
+from PIL import Image
+from tensorflow.keras.applications.resnet50 import preprocess_input
+from groq import Groq
+from supabase import create_client
 
 
 # ==================================================
-# FOOTER
+# PAGE CONFIGURATION
 # ==================================================
 
-st.markdown(
-    "<div class='app-footer'>PCOS Insight · Research and educational use only · "
-    "Not a medical diagnostic tool</div>",
-    unsafe_allow_html=True
+st.set_page_config(
+    page_title="PCOS Insight",
+    page_icon="♀️",
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+GROQ_MODEL = "openai/gpt-oss-120b"
+ADVISORY_DISCLAIMER = (
+    "This AI-generated information is for educational purposes only. "
+    "It is not a medical diagnosis or treatment recommendation. "
+    "Please consult a qualified healthcare professional."
+)
+
+FEATURES = [
+    "Hair_Growth", "Blood_Sugar", "Hormonal_Disruption", "AMH",
+    "Androgen_Score", "HOMA_IR", "FSH_LH_raw", "Total_Follicles",
+    "Follicle_L", "LH", "FSH", "LH_FSH_Ratio", "Cycle_Length",
+    "Fast_Food", "TSH", "BP_Diastolic", "BMI", "Progesterone",
+    "Marriage_Years", "RR"
+]
+
+CLASSES = [
+    "Insulin Resistant",
+    "Inflammatory",
+    "Adrenal",
+    "Post-Pill"
+]
+
+CLINICAL_MODEL_PATH = os.path.join(BASE_DIR, "xgboost_model.json")
+
+
+# ==================================================
+# RESPONSIVE LAVENDER THEME
+# ==================================================
+
+st.markdown("""
+<style>
+/* ---------- Global page ---------- */
+.stApp,
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(135deg, #FAF8FE 0%, #F1ECFA 100%) !important;
+}
+.block-container {
+    max-width: 1200px;
+    padding-top: 1.2rem;
+    padding-bottom: 2.5rem;
+    padding-left: clamp(1rem, 3vw, 2.5rem);
+    padding-right: clamp(1rem, 3vw, 2.5rem);
+}
+h1, h2, h3, h4 {
+    color: #604582 !important;
+}
+p, li, label, [data-testid="stMarkdownContainer"] {
+    color: #493B5D;
+}
+[data-testid="stSidebar"] {
+    background: #EAE2F7 !important;
+}
+
+/* ---------- Inputs: login, signup and analysis ---------- */
+.stTextInput input,
+.stNumberInput input,
+.stTextArea textarea,
+[data-baseweb="select"] > div {
+    color: #30243D !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid #CDBBE2 !important;
+    border-radius: 10px !important;
+}
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder {
+    color: #786B86 !important;
+    opacity: 1 !important;
+}
+.stTextInput input:focus,
