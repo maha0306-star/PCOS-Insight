@@ -59,7 +59,6 @@ CLINICAL_MODEL_PATH = os.path.join(BASE_DIR, "xgboost_model.json")
 st.markdown("""
 <style>
 /* Remove the entire empty Streamlit top header strip, not just its icons */
-[data-testid="stToolbar"],
 [data-testid="stDecoration"],
 [data-testid="stStatusWidget"],
 #MainMenu,
@@ -84,8 +83,12 @@ header[data-testid="stHeader"] {
     background: transparent !important;
     z-index: 1001 !important;
 }
+/* Do not hide the toolbar: Streamlit places the sidebar hamburger there
+   in some versions. Hide only the deploy/menu decorations above. */
 header[data-testid="stHeader"] [data-testid="stToolbar"] {
-    display: none !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 /* Make the native sidebar open/close control visible and easy to tap. */
 [data-testid="stSidebarCollapsedControl"] button,
