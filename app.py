@@ -47,6 +47,8 @@ CLASSES = [
     "Post-Pill"
 ]
 
+CNN_CLASSES = ["Normal", "PCO", "Dominant_Follicle"]
+
 CLINICAL_MODEL_PATH = os.path.join(BASE_DIR, "xgboost_model.json")
 
 
@@ -56,18 +58,6 @@ CLINICAL_MODEL_PATH = os.path.join(BASE_DIR, "xgboost_model.json")
 
 st.markdown("""
 <style>
-/* Hide radio circles in homepage navigation */
-.st-key-main_navigation [role="radio"] > div:first-child {
-    display: none !important;
-}
-
-.st-key-main_navigation [role="radio"] svg {
-    display: none !important;
-}
-
-.st-key-main_navigation input[type="radio"] {
-    display: none !important;
-}
 /* Remove the entire empty Streamlit top header strip, not just its icons */
 header[data-testid="stHeader"],
 [data-testid="stHeader"],
@@ -591,17 +581,23 @@ or infer unmeasured hormone levels. Keep the response clear and concise.
     return response.choices[0].message.content
 
 
-def generate_ultrasound_advisory(prediction, pcos_probability, comparison_probability):
+def generate_ultrasound_advisory(prediction, class_probabilities):
     client = get_groq_client()
     if client is None:
         return "Groq API key not found. Please check Streamlit Cloud Secrets."
+
+    probability_text = "\\n".join(
+        f"{class_name}: {probability:.2%}"
+        for class_name, probability in zip(CNN_CLASSES, class_probabilities)
+    )
 
     prompt = f"""
 You are an educational PCOS health information assistant.
 
 CNN ultrasound classification: {prediction}
-PCO probability: {pcos_probability:.2%}
-Comparison Class probability: {comparison_probability:.2%}
+
+Class probabilities:
+{probability_text}
 
 Explain the image classification in simple language.
 
@@ -806,33 +802,6 @@ if not st.session_state.get("authenticated", False):
 
 
 # ==================================================
-# SIDEBAR ACCOUNT CONTROLS
-# ==================================================
-
-with st.sidebar:
-    logo_path = os.path.join(BASE_DIR, "pcos_insight_logo.png")
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=72)
-    st.markdown("### PCOS Insight")
-    st.caption(f"Signed in as {st.session_state.get('user_email', '')}")
-    st.markdown("---")
-    if st.button("Log out", use_container_width=True):
-        try:
-            auth_client = get_supabase_client()
-            if auth_client is not None:
-                auth_client.auth.sign_out()
-        except Exception:
-            pass
-        st.session_state.authenticated = False
-        st.session_state.pop("user_email", None)
-        st.session_state.pop("clinical_result", None)
-        st.session_state.pop("ultrasound_result", None)
-        st.session_state.auth_mode = "login"
-        st.rerun()
-    st.caption("Research prototype · Not for medical diagnosis")
-
-
-# ==================================================
 # MODEL LOADING
 # ==================================================
 
@@ -877,21 +846,14 @@ def set_page(page_name):
     st.session_state.main_navigation = page_name
 
 
-
 def render_navigation():
     logo_path = os.path.join(BASE_DIR, "pcos_insight_logo.png")
-
-    logo_col, title_col = st.columns(
-        [0.075, 0.925],
-        vertical_alignment="center"
-    )
-
+    logo_col, title_col = st.columns([0.075, 0.925], vertical_alignment="center")
     with logo_col:
         if os.path.exists(logo_path):
             st.image(logo_path, width=44)
         else:
             st.markdown("### ♀️")
-
     with title_col:
         st.markdown(
             "<div class='brand-name'>PCOS Insight</div>"
@@ -899,45 +861,36 @@ def render_navigation():
             unsafe_allow_html=True
         )
 
+    with account_col:
+        st.caption(f"Signed in: {st.session_state.get('user_email', '')}")
+        if st.button("Log out", key="top_logout", use_container_width=True):
+            try:
+                auth_client = get_supabase_client()
+                if auth_client is not None:
+                    auth_client.auth.sign_out()
+            except Exception:
+                pass
+            st.session_state.authenticated = False
+            st.session_state.pop("user_email", None)
+            st.session_state.pop("clinical_result", None)
+            st.session_state.pop("ultrasound_result", None)
+            st.session_state.auth_mode = "login"
+            st.rerun()
+
     st.markdown("<div class='nav-wrap'>", unsafe_allow_html=True)
-
-    if "page" not in st.session_state:
-        st.session_state.page = "Home"
-
-    pages = [
-        "Home",
-        "Clinical Analysis",
-        "Ultrasound Analysis",
-        "About Us",
-        "Contact Us"
-    ]
-
-    cols = st.columns([
-        1, 0.08, 1.6, 0.08, 1.8,
-        0.08, 0.8, 0.08, 1
-    ])
-
-    for i, page in enumerate(pages):
-        with cols[i * 2]:
-            if st.button(
-                page,
-                key=f"nav_{page}",
-                type="tertiary",
-                use_container_width=True
-            ):
-                st.session_state.page = page
-                st.rerun()
-
-        if i < len(pages) - 1:
-            with cols[i * 2 + 1]:
-                st.markdown(
-                    "<div style='text-align:center;color:#A99AB8;'>|</div>",
-                    unsafe_allow_html=True
-                )
-
+    selected = st.radio(
+        "Main navigation",
+        NAV_PAGES,
+        key="main_navigation",
+        horizontal=True,
+        label_visibility="collapsed",
+        on_change=lambda: setattr(
+            st.session_state, "page", st.session_state.main_navigation
+        )
+    )
     st.markdown("</div>", unsafe_allow_html=True)
-
-    return st.session_state.page
+    st.session_state.page = selected
+    return selected
 
 
 page = render_navigation()
@@ -995,7 +948,7 @@ if page == "Home":
         <div class="info-card">
           <h3>Ultrasound Analysis</h3>
           <p>Upload an ovarian ultrasound image and view the CNN-based
-          PCO or Comparison Class prediction.</p>
+          Normal, PCO or Dominant_Follicle prediction.</p>
         </div>
         """, unsafe_allow_html=True)
         st.button("Open Ultrasound Analysis", key="home_ultrasound",
@@ -1007,7 +960,7 @@ if page == "Home":
     s1, s2, s3 = st.columns(3)
     for col, number, label, note in [
         (s1, "4", "Clinical subtypes", "XGBoost classification"),
-        (s2, "2", "Ultrasound classes", "CNN image classification"),
+        (s2, "3", "Ultrasound classes", "CNN image classification"),
         (s3, "XAI", "Explainable insights", "SHAP-based interpretation")
     ]:
         with col:
@@ -1048,7 +1001,7 @@ elif page == "About Us":
         "Clinical Analysis module uses an XGBoost model for four-class PCOS "
         "subtype classification and provides patient-specific SHAP explanations. "
         "The Ultrasound Analysis module uses a CNN to classify uploaded images "
-        "into PCO and Comparison Class."
+        "into Normal, PCO and Dominant_Follicle."
     )
     st.subheader("Research Objectives")
     st.markdown("""
@@ -1321,32 +1274,36 @@ elif page == "Ultrasound Analysis":
                     image_array = np.expand_dims(image_array, axis=0)
                     image_array = preprocess_input(image_array)
 
-                    output = float(
-                        model.predict(image_array, verbose=0)[0][0]
+                    class_probabilities = np.asarray(
+                        model.predict(image_array, verbose=0)[0],
+                        dtype=float
                     )
-                    pcos_probability = output
-                    comparison_probability = 1.0 - output
-                    prediction = (
-                        "PCO"
-                        if pcos_probability >= comparison_probability
-                        else "Comparison Class"
-                    )
+
+                    if class_probabilities.size != len(CNN_CLASSES):
+                        raise ValueError(
+                            "The CNN returned "
+                            f"{class_probabilities.size} outputs, but "
+                            f"{len(CNN_CLASSES)} classes are configured. "
+                            "Please verify the model and class order."
+                        )
+
+                    predicted_index = int(np.argmax(class_probabilities))
+                    prediction = CNN_CLASSES[predicted_index]
+                    confidence = float(class_probabilities[predicted_index])
 
                     advisory = None
                     advisory_error = None
                     try:
                         advisory = generate_ultrasound_advisory(
-                            prediction,
-                            pcos_probability,
-                            comparison_probability
+                            prediction, class_probabilities
                         )
                     except Exception as exc:
                         advisory_error = str(exc)
 
                     st.session_state["ultrasound_result"] = {
                         "prediction": prediction,
-                        "pcos_probability": pcos_probability,
-                        "comparison_probability": comparison_probability,
+                        "confidence": confidence,
+                        "class_probabilities": class_probabilities.tolist(),
                         "advisory": advisory,
                         "advisory_error": advisory_error,
                         "filename": uploaded_file.name,
@@ -1369,18 +1326,14 @@ elif page == "Ultrasound Analysis":
                 unsafe_allow_html=True
             )
 
-            confidence = max(
-                ultrasound_result["pcos_probability"],
-                ultrasound_result["comparison_probability"]
-            )
+            confidence = ultrasound_result["confidence"]
             st.metric("Prediction Confidence", f"{confidence * 100:.2f}%")
 
             probability_df = pd.DataFrame({
-                "Class": ["PCO", "Comparison Class"],
-                "Probability (%)": [
-                    round(ultrasound_result["pcos_probability"] * 100, 2),
-                    round(ultrasound_result["comparison_probability"] * 100, 2)
-                ]
+                "Class": CNN_CLASSES,
+                "Probability (%)": (
+                    np.asarray(ultrasound_result["class_probabilities"]) * 100
+                ).round(2)
             })
 
             with st.expander("📊 Probability Analysis", expanded=True):
@@ -1412,8 +1365,8 @@ elif page == "Ultrasound Analysis":
                     f"{ultrasound_result['image_size'][1]} pixels"
                 )
                 st.caption(
-                    "The CNN classifies the uploaded image as PCO or "
-                    "Comparison Class only. It does not predict the four "
+                    "The CNN classifies the uploaded image as Normal, PCO or "
+                    "Dominant_Follicle. It does not predict the four "
                     "clinical PCOS subtypes."
                 )
         else:
