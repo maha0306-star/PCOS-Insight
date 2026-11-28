@@ -20,7 +20,7 @@ st.set_page_config(
     page_title="PCOS Insight",
     page_icon="♀️",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="auto"
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -59,8 +59,6 @@ CLINICAL_MODEL_PATH = os.path.join(BASE_DIR, "xgboost_model.json")
 st.markdown("""
 <style>
 /* Remove the entire empty Streamlit top header strip, not just its icons */
-header[data-testid="stHeader"],
-[data-testid="stHeader"],
 [data-testid="stToolbar"],
 [data-testid="stDecoration"],
 [data-testid="stStatusWidget"],
@@ -75,6 +73,26 @@ header[data-testid="stHeader"],
     border: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
+}
+
+/* Keep Streamlit's native sidebar toggle available as the mobile hamburger menu. */
+header[data-testid="stHeader"] {
+    display: block !important;
+    visibility: visible !important;
+    height: 2.75rem !important;
+    min-height: 2.75rem !important;
+    background: transparent !important;
+    z-index: 1001 !important;
+}
+header[data-testid="stHeader"] [data-testid="stToolbar"] {
+    display: none !important;
+}
+/* Make the native sidebar open/close control visible and easy to tap. */
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="stSidebar"] button[kind="header"] {
+    color: #604582 !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
 }
 
 /* Prevent a leftover dark band where the header used to be */
@@ -298,6 +316,44 @@ p, li, label, [data-testid="stMarkdownContainer"] {
 }
 .st-key-main_navigation [role="radiogroup"] label:has(input:checked) p {
     color: #FFFFFF !important;
+}
+
+/*
+   Responsive dashboard navigation:
+   - Desktop: account/branding sidebar + horizontal top navigation.
+   - Mobile/tablet: top navigation becomes a hamburger-triggered Streamlit drawer;
+     the drawer contains branding, signed-in email, quote, page links and logout.
+*/
+@media (min-width: 769px) {
+    [data-testid="stSidebar"] [data-testid="stRadio"] { display: none !important; }
+    .nav-wrap { display: block !important; }
+}
+@media (max-width: 768px) {
+    .nav-wrap { display: none !important; }
+    header[data-testid="stHeader"] {
+        height: 3rem !important;
+        min-height: 3rem !important;
+    }
+    .block-container {
+        padding-top: .75rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    .brand-name { font-size: 22px !important; }
+    .hero-panel { min-height: auto !important; }
+    [data-testid="stSidebar"] {
+        min-width: min(84vw, 340px) !important;
+        max-width: min(84vw, 340px) !important;
+        background: #EAE2F7 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] label {
+        min-height: 42px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    [data-testid="stSidebar"] .stButton > button {
+        min-height: 46px !important;
+    }
 }
 
 /* ---------- Result headings and footer ---------- */
@@ -839,19 +895,38 @@ if "page" not in st.session_state:
 
 if "main_navigation" not in st.session_state:
     st.session_state.main_navigation = st.session_state.page
+if "mobile_navigation" not in st.session_state:
+    st.session_state.mobile_navigation = st.session_state.page
 
 
 def set_page(page_name):
     st.session_state.page = page_name
     st.session_state.main_navigation = page_name
+    st.session_state.mobile_navigation = page_name
+
+
+def logout_user():
+    try:
+        auth_client = get_supabase_client()
+        if auth_client is not None:
+            auth_client.auth.sign_out()
+    except Exception:
+        pass
+    st.session_state.authenticated = False
+    st.session_state.pop("user_email", None)
+    st.session_state.pop("clinical_result", None)
+    st.session_state.pop("ultrasound_result", None)
+    st.session_state.auth_mode = "login"
+    st.rerun()
 
 
 def render_navigation():
+    # Brand header is shared by desktop and mobile layouts.
     logo_path = os.path.join(BASE_DIR, "pcos_insight_logo.png")
-    logo_col, title_col = st.columns([0.075, 0.925], vertical_alignment="center")
+    logo_col, title_col = st.columns([0.09, 0.91], vertical_alignment="center")
     with logo_col:
         if os.path.exists(logo_path):
-            st.image(logo_path, width=44)
+            st.image(logo_path, width=46)
         else:
             st.markdown("### ♀️")
     with title_col:
@@ -861,22 +936,37 @@ def render_navigation():
             unsafe_allow_html=True
         )
 
-    with account_col:
-        st.caption(f"Signed in: {st.session_state.get('user_email', '')}")
-        if st.button("Log out", key="top_logout", use_container_width=True):
-            try:
-                auth_client = get_supabase_client()
-                if auth_client is not None:
-                    auth_client.auth.sign_out()
-            except Exception:
-                pass
-            st.session_state.authenticated = False
-            st.session_state.pop("user_email", None)
-            st.session_state.pop("clinical_result", None)
-            st.session_state.pop("ultrasound_result", None)
-            st.session_state.auth_mode = "login"
-            st.rerun()
+    # Desktop account panel; on narrow screens Streamlit turns this into the
+    # hamburger-triggered drawer containing account details and page navigation.
+    with st.sidebar:
+        if os.path.exists(logo_path):
+            st.image(logo_path, width=76)
+        else:
+            st.markdown("## ♀️")
+        st.markdown("## PCOS Insight")
+        st.caption("Women's health research")
+        st.divider()
+        st.caption("SIGNED IN AS")
+        st.markdown(f"**{st.session_state.get('user_email', '')}**")
+        st.markdown(
+            "<div style='background:#F7F2FC;border-left:4px solid #8064A8;"
+            "padding:13px;border-radius:8px;color:#493B5D;font-style:italic;'>"
+            "Knowledge empowers better health.</div>",
+            unsafe_allow_html=True
+        )
+        st.markdown(" ")
+        st.radio(
+            "Dashboard navigation",
+            NAV_PAGES,
+            key="mobile_navigation",
+            label_visibility="collapsed",
+            on_change=lambda: set_page(st.session_state.mobile_navigation)
+        )
+        st.divider()
+        if st.button("Log out", key="sidebar_logout", use_container_width=True):
+            logout_user()
 
+    # Horizontal top navigation is shown on desktop and moved into the drawer on mobile.
     st.markdown("<div class='nav-wrap'>", unsafe_allow_html=True)
     selected = st.radio(
         "Main navigation",
@@ -884,9 +974,7 @@ def render_navigation():
         key="main_navigation",
         horizontal=True,
         label_visibility="collapsed",
-        on_change=lambda: setattr(
-            st.session_state, "page", st.session_state.main_navigation
-        )
+        on_change=lambda: set_page(st.session_state.main_navigation)
     )
     st.markdown("</div>", unsafe_allow_html=True)
     st.session_state.page = selected
